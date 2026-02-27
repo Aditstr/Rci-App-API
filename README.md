@@ -1,59 +1,74 @@
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+# RCI App API backend
 
-## About Laravel
+Ini adalah repositori antarmuka pemprograman aplikasi (API) backend berbasis Laravel untuk **RCI App** (ROYS Council Indonesia), sebuah ekosistem konsultasi hukum cerdas. API ini memfasilitasi integrasi dan pengelolaan data antar Klien, Paralegal, Pengacara (Lawyer), serta layanan dukungan Kecerdasan Buatan (AI).
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## 💡 Fitur Utama
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+Sistem ini memfasilitasi alur manajemen kasus secara *end-to-end* dengan peran ganda (*Multi-Role*):
+- **Otentikasi & Verifikasi Keamanan:** Mengamankan setiap *endpoint* melalui autentikasi token **Laravel Sanctum** dengan prasyarat *Email Verification*.
+- **Integrasi Konsultasi Hukum AI:** *Engine* AI berjenjang dengan pembatasan API per hari (*throttle*) untuk kelas *Freemium* dan akses instan berbasis pengetahuan luas untuk kelas *Pro Member*.
+- **Sistem Pembayaran Terpadu (Escrow & Wallet):** Pengelolaan deposit virtual (dompet) bagi klien, sistem pembekuan / pelepasan *escrow* dana layanan, dan rekam riwayat saldo pengguna.
+- **Modul Manajemen Klien:** Pendaftaran kasus baru, pemantauan *timeline* secara real-time.
+- **Modul Workspace Paralegal:** Pengelolaan daftar penugasan berformat Kanban-board, serta mekanisme *Job Marketplace* guna melamar kasus publik.
+- **Modul Dashboard Ahli Hukum (Lawyer):** Pendelegasian (*Escalation*), fitur pengajuan penawaran harga layanan hukum (*Quotation* & *Fee Split*), serta riwayat royalti *Professional Revenue*.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## 🚀 Teknologi yang Digunakan
+* **Framework:** [Laravel 11.x](https://laravel.com/) (PHP)
+* **Database:** MySQL / PostgreSQL (terkoneksi Eloquent ORM)
+* **Autentikasi:** Laravel Sanctum
+* **Arsitektur:** RESTful API
 
-## Learning Laravel
+## 📋 Prasyarat Instalasi (Lokasi)
+Pastikan sistem komputer Anda telah dipasang beberapa komponen vital:
+- PHP >= 8.2
+- Composer
+- Database Engine (misal: MySQL, Laragon, XAMPP, dsb)
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+## 🛠️ Cara Instalasi & Menjalankan
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Langkah-langkah untuk menyalin (clone) repositori dan menjalankannya pada *server* pengembangan lokal:
 
-## Laravel Sponsors
+1. **Jalankan *Clone* Repositori**
+```bash
+git clone https://github.com/Aditstr/Rci-App-API.git
+cd Rci-App-API
+```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+2. **Instal Dependensi Composer**
+```bash
+composer install
+```
 
-### Premium Partners
+3. **Konfigurasi Lingkungan (`.env`)**
+Salin *template* konfigurasi *environment*:
+```bash
+cp .env.example .env
+```
+Lalu buka file `.env` di teks editor, sesuaikan pengaturan kredensial basis data (`DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`) Anda.
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+4. **Hasilkan Kunci Aplikasi Laravel (*App Key*)**
+```bash
+php artisan key:generate
+```
 
-## Contributing
+5. **Jalankan Migrasi Database**
+```bash
+php artisan migrate
+```
+*(Opsional)* Jika Anda memiliki data Dummy awal di Seeder, jalankan `php artisan migrate --seed`.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+6. **Hidupkan Server Lokal Laravel**
+```bash
+php artisan serve
+```
+Secara otomatis, REST API akan beroperasi mencakup URL Basis (seperti `http://localhost:8000/api`).
 
-## Code of Conduct
+## 📚 Dokumentasi API
+Anda dapat menjelajahi titik-akhir API (*Endpoints*) serta parameternya dengan mengacu pada rancangan kontroler yang ada pada direktori:
+* `routes/api.php`
+* *Documentation Markdown yang menyertai proyek pada internal tim.*
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## 🔒 Lisensi
+RCI App dan repositori API ini bersifat privat / hak kepemilikan terbatas (*Proprietary software*).
