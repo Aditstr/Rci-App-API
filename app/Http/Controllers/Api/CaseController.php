@@ -54,6 +54,46 @@ class CaseController extends Controller
      *
      * POST /api/cases
      */
+    /**
+     * Map Indonesian category names from frontend to English enum values in DB.
+     */
+    private function mapCategory(string $category): string
+    {
+        $map = [
+            'hukum pidana'          => 'criminal',
+            'pidana'                => 'criminal',
+            'criminal'              => 'criminal',
+            'hukum perdata'         => 'general',
+            'perdata'               => 'general',
+            'hukum keluarga'        => 'family',
+            'keluarga'              => 'family',
+            'family'                => 'family',
+            'hukum perusahaan'      => 'corporate',
+            'perusahaan'            => 'corporate',
+            'korporasi'             => 'corporate',
+            'corporate'             => 'corporate',
+            'hukum properti'        => 'property',
+            'properti'              => 'property',
+            'property'              => 'property',
+            'hukum ketenagakerjaan' => 'labor',
+            'ketenagakerjaan'       => 'labor',
+            'labor'                 => 'labor',
+            'hukum imigrasi'        => 'immigration',
+            'imigrasi'              => 'immigration',
+            'immigration'           => 'immigration',
+            'hukum kekayaan intelektual' => 'intellectual_property',
+            'kekayaan intelektual'  => 'intellectual_property',
+            'intellectual_property' => 'intellectual_property',
+            'hukum pajak'           => 'tax',
+            'pajak'                 => 'tax',
+            'tax'                   => 'tax',
+            'umum'                  => 'general',
+            'general'               => 'general',
+        ];
+
+        return $map[strtolower(trim($category))] ?? 'general';
+    }
+
     public function store(Request $request): JsonResponse
     {
         $request->validate([
@@ -62,13 +102,15 @@ class CaseController extends Controller
             'category'    => 'required|string',
         ]);
 
+        $mappedCategory = $this->mapCategory($request->input('category'));
+
         $case = LegalCase::create([
             'case_number' => LegalCase::generateCaseNumber(),
             'client_id'   => $request->user()->id,
             'title'       => $request->input('title'),
             'description' => $request->input('description'),
-            'category'    => $request->input('category'),
-            'status'      => 'pending', // e.g. "Kasus Diajukan"
+            'category'    => $mappedCategory,
+            'status'      => 'submitted',
             'submitted_at'=> now(),
         ]);
 
