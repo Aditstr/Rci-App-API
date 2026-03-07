@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\LawyerDashboardController;
 use App\Http\Controllers\Api\ParalegalDashboardController;
 use App\Http\Controllers\Api\RciApiController;
 use App\Http\Controllers\Api\VerificationController;
+use App\Http\Controllers\Api\ChatController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -68,6 +69,11 @@ Route::middleware(['auth:sanctum', 'verified'])->prefix('cases')->group(function
     Route::get('/', [CaseController::class, 'index'])->name('cases.index');
     Route::get('/{id}', [CaseController::class, 'show'])->name('cases.show');
     Route::post('/', [CaseController::class, 'store'])->name('cases.store');
+    
+    // Case Chat Room
+    Route::get('/{id}/messages', [ChatController::class, 'index'])->name('cases.messages.index');
+    Route::post('/{id}/messages', [ChatController::class, 'store'])->name('cases.messages.store');
+    Route::put('/{id}/messages/read', [ChatController::class, 'markAsRead'])->name('cases.messages.read');
 });
 
 // ──────────────────────────────────────────────

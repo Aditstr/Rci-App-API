@@ -216,7 +216,7 @@ PROMPT;
 
             if ($apiKey) {
                 $response = Http::withToken($apiKey)->timeout(10)->post('https://api.groq.com/openai/v1/chat/completions', [
-                    'model' => 'llama3-8b-8192', // Model Meta yang kenceng & gratis
+                    'model' => 'llama-3.1-8b-instant', // Model Meta yang kenceng & gratis
                     'messages' => [
                         ['role' => 'system', 'content' => $systemPrompt],
                         ['role' => 'user', 'content' => $message],
@@ -235,6 +235,8 @@ PROMPT;
                             ? 'Analisis berdasarkan hukum positif Indonesia. Konsultasikan dengan Advokat.' 
                             : 'Jawaban bersifat umum. Hubungi Paralegal kami untuk langkah teknis.',
                     ];
+                } else {
+                    Log::error("Groq API Error: " . $response->body());
                 }
             }
         } catch (\Exception $e) {

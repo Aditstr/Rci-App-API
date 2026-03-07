@@ -1,0 +1,90 @@
+
+   FAIL  Tests\Feature\Api\ChatRoomTest
+  ⨯ unauthorized user cannot view messages
+  ⨯ unauthorized user cannot send messages
+  ⨯ client can send and view messages
+  ⨯ expert can send and view messages
+  ───────────────────  
+  …   QueryException   
+  SQLSTATE[HY000]: General error: 1 near "CONSTRAINT": syntax error (Connection: sqlite, Database: :memory:, SQL: ALTER TABLE wallet_transactions DROP CONSTRAINT IF EXISTS wallet_transactions_type_check)
+
+  at vendor\laravel\framework\src\Illuminate\Database\Connection.php:838
+    834▕             $exceptionType = $this->isUniqueConstraintError($e)
+    835▕                 ? UniqueConstraintViolationException::class
+    836▕                 : QueryException::class;
+    837▕ 
+  ➜ 838▕             throw new $exceptionType(
+    839▕                 $this->getNameWithReadWriteType(),
+    840▕                 $query,
+    841▕                 $this->prepareBindings($bindings),
+    842▕                 $e,
+
+  1   vendor\laravel\framework\src\Illuminate\Database\Connection.php:838
+
+  2   vendor\laravel\framework\src\Illuminate\Database\Connection.php:578
+      NunoMaduro\Collision\Exceptions\TestException::("SQLSTATE[HY000]: General error: 1 near "CONSTRAINT": syntax error")
+
+  ───────────────────  
+  …   QueryException   
+  SQLSTATE[HY000]: General error: 1 near "CONSTRAINT": syntax error (Connection: sqlite, Database: :memory:, SQL: ALTER TABLE wallet_transactions DROP CONSTRAINT IF EXISTS wallet_transactions_type_check)
+
+  at vendor\laravel\framework\src\Illuminate\Database\Connection.php:838
+    834▕             $exceptionType = $this->isUniqueConstraintError($e)
+    835▕                 ? UniqueConstraintViolationException::class
+    836▕                 : QueryException::class;
+    837▕ 
+  ➜ 838▕             throw new $exceptionType(
+    839▕                 $this->getNameWithReadWriteType(),
+    840▕                 $query,
+    841▕                 $this->prepareBindings($bindings),
+    842▕                 $e,
+
+  1   vendor\laravel\framework\src\Illuminate\Database\Connection.php:838
+
+  2   vendor\laravel\framework\src\Illuminate\Database\Connection.php:578
+      NunoMaduro\Collision\Exceptions\TestException::("SQLSTATE[HY000]: General error: 1 near "CONSTRAINT": syntax error")
+
+  ───────────────────  
+  …   QueryException   
+  SQLSTATE[HY000]: General error: 1 near "CONSTRAINT": syntax error (Connection: sqlite, Database: :memory:, SQL: ALTER TABLE wallet_transactions DROP CONSTRAINT IF EXISTS wallet_transactions_type_check)
+
+  at vendor\laravel\framework\src\Illuminate\Database\Connection.php:838
+    834▕             $exceptionType = $this->isUniqueConstraintError($e)
+    835▕                 ? UniqueConstraintViolationException::class
+    836▕                 : QueryException::class;
+    837▕ 
+  ➜ 838▕             throw new $exceptionType(
+    839▕                 $this->getNameWithReadWriteType(),
+    840▕                 $query,
+    841▕                 $this->prepareBindings($bindings),
+    842▕                 $e,
+
+  1   vendor\laravel\framework\src\Illuminate\Database\Connection.php:838
+
+  2   vendor\laravel\framework\src\Illuminate\Database\Connection.php:578
+      NunoMaduro\Collision\Exceptions\TestException::("SQLSTATE[HY000]: General error: 1 near "CONSTRAINT": syntax error")
+
+  ───────────────────  
+  …   QueryException   
+  SQLSTATE[HY000]: General error: 1 near "CONSTRAINT": syntax error (Connection: sqlite, Database: :memory:, SQL: ALTER TABLE wallet_transactions DROP CONSTRAINT IF EXISTS wallet_transactions_type_check)
+
+  at vendor\laravel\framework\src\Illuminate\Database\Connection.php:838
+    834▕             $exceptionType = $this->isUniqueConstraintError($e)
+    835▕                 ? UniqueConstraintViolationException::class
+    836▕                 : QueryException::class;
+    837▕ 
+  ➜ 838▕             throw new $exceptionType(
+    839▕                 $this->getNameWithReadWriteType(),
+    840▕                 $query,
+    841▕                 $this->prepareBindings($bindings),
+    842▕                 $e,
+
+  1   vendor\laravel\framework\src\Illuminate\Database\Connection.php:838
+
+  2   vendor\laravel\framework\src\Illuminate\Database\Connection.php:578
+      NunoMaduro\Collision\Exceptions\TestException::("SQLSTATE[HY000]: General error: 1 near "CONSTRAINT": syntax error")
+
+
+  Tests:    4 failed (0 assertions)
+  Duration: 0.85s
+
