@@ -112,6 +112,7 @@ class CaseController extends Controller
             'category'    => $mappedCategory,
             'status'      => 'submitted',
             'submitted_at'=> now(),
+            'is_marketplace' => true,
         ]);
 
         return response()->json([
