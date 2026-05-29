@@ -15,6 +15,96 @@ components:
 security:
   - bearerAuth: []
 paths:
+  /chat/send:
+    post:
+      summary: AI Legal Chat (Freemium)
+      description: |
+        Send a legal question to the AI assistant. 
+        - **Guest/Free users**: Limited to 3 questions/day, receives general analysis.
+        - **Pro users (corporate/lawyer)**: Unlimited access, receives detailed analysis with specific UU/Pasal references.
+        Uses Groq API (LLaMA 3.1) with fallback to built-in responses.
+      tags:
+        - AI Chat
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - message
+              properties:
+                message:
+                  type: string
+                  description: Legal question (max 2000 characters)
+                  example: "Saya ingin menanyakan tentang hak pesangon setelah di-PHK"
+                session_id:
+                  type: string
+                  description: Session ID for guest users (auto-generated if not provided)
+                user_id:
+                  type: integer
+                  description: User ID for testing (optional, overridden by Sanctum auth)
+      responses:
+        '200':
+          description: AI Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  tier:
+                    type: string
+                    enum: [guest, free, pro]
+                  data:
+                    type: object
+                    properties:
+                      answer:
+                        type: string
+                      topic:
+                        type: string
+                        enum: [pidana, perdata, keluarga, bisnis, properti, tenaga_kerja, umum]
+                      confidence:
+                        type: number
+                      disclaimer:
+                        type: string
+                  usage:
+                    type: object
+                    properties:
+                      limit:
+                        type: integer
+                      used:
+                        type: integer
+                      remaining:
+                        type: integer
+        '429':
+          description: Daily limit reached (Free/Guest users)
+  /rci/chat:
+    post:
+      summary: AI Chat for Authenticated Users
+      description: AI legal chat for verified, authenticated users via Sanctum token.
+      tags:
+        - AI Chat
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - message
+              properties:
+                message:
+                  type: string
+                  example: "Bagaimana cara mengajukan gugatan perdata?"
+      responses:
+        '200':
+          description: AI Response
+        '401':
+          description: Unauthenticated
   /auth/register:
     post:
       summary: Register a new user
