@@ -28,7 +28,7 @@ class JobMarketplaceController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Feed Job Marketplace Paralegal',
-            'data'    => $query->get()
+            'data'    => $query->paginate(15)
         ]);
     }
 
@@ -63,6 +63,9 @@ class JobMarketplaceController extends Controller
         $case->assigned_at = now();
         $case->is_marketplace = false; // Karena sudah diambil
         $case->save();
+
+        // Notify the client that their case has been taken
+        $case->client->notify(new \App\Notifications\CaseStatusUpdated($case, "Kasus Anda telah diambil oleh pakar hukum " . $user->name . " dan sedang diproses."));
 
         return response()->json([
             'success' => true,

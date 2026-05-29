@@ -36,7 +36,7 @@ class ChatController extends Controller
         $messages = ChatMessage::with(['sender:id,name,role'])
             ->where('case_id', $case->id)
             ->orderBy('created_at', 'asc')
-            ->get();
+            ->cursorPaginate(50);
 
         return response()->json([
             'success' => true,
@@ -79,6 +79,9 @@ class ChatController extends Controller
 
         // Eager load the sender detail for immediate response consistency
         $chatMessage->load('sender:id,name,role');
+
+        // Broadcast the message event
+        \App\Events\ChatMessageSent::dispatch($chatMessage);
 
         return response()->json([
             'success' => true,

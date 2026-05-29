@@ -1,0 +1,285 @@
+openapi: 3.0.0
+info:
+  title: RCI (Roys Counsel Indonesia) API
+  description: API Documentation for RCI Mobile & Web Applications. All endpoints except AI Chat require a Sanctum Bearer token.
+  version: 1.0.0
+servers:
+  - url: /api/v1
+    description: Current API Version
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+security:
+  - bearerAuth: []
+paths:
+  /auth/register:
+    post:
+      summary: Register a new user
+      tags:
+        - Authentication
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - email
+                - password
+                - password_confirmation
+                - role
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+                password_confirmation:
+                  type: string
+                  format: password
+                role:
+                  type: string
+                  enum: [client, paralegal, lawyer, corporate]
+      responses:
+        '201':
+          description: Created
+  /auth/login:
+    post:
+      summary: Authenticate a user
+      tags:
+        - Authentication
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  token:
+                    type: string
+                  user:
+                    type: object
+  /auth/me:
+    get:
+      summary: Get authenticated user profile
+      tags:
+        - Authentication
+      responses:
+        '200':
+          description: OK
+  /cases:
+    get:
+      summary: Get a list of legal cases (Client)
+      tags:
+        - Case Management
+      responses:
+        '200':
+          description: OK
+    post:
+      summary: Submit a new legal case (Client)
+      tags:
+        - Case Management
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - description
+                - category
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                category:
+                  type: string
+      responses:
+        '201':
+          description: Created
+  /cases/{case_id}/documents:
+    post:
+      summary: Upload a document to a case
+      tags:
+        - Case Management
+      parameters:
+        - in: path
+          name: case_id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                document_type:
+                  type: string
+                  enum: [evidence, legal_letter, contract, identification, other]
+      responses:
+        '201':
+          description: Document Uploaded
+  /cases/{case_id}/messages:
+    get:
+      summary: Get chat messages for a case
+      tags:
+        - Chat
+      parameters:
+        - in: path
+          name: case_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+    post:
+      summary: Send a chat message
+      tags:
+        - Chat
+      parameters:
+        - in: path
+          name: case_id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - message
+              properties:
+                message:
+                  type: string
+                attachments:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '201':
+          description: Message Sent
+  /paralegal/cases:
+    get:
+      summary: Kanban Board Cases (Paralegal)
+      tags:
+        - Paralegal Dashboard
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [need_action, reviewing]
+      responses:
+        '200':
+          description: OK
+  /paralegal/cases/{id}/status:
+    post:
+      summary: Move a case in Kanban (Paralegal)
+      tags:
+        - Paralegal Dashboard
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  enum: [in_progress, reviewing, escalated, completed]
+      responses:
+        '200':
+          description: Status Updated
+  /paralegal/marketplace:
+    get:
+      summary: Job Marketplace Feed (Paralegal)
+      tags:
+        - Job Marketplace
+      responses:
+        '200':
+          description: OK
+  /paralegal/marketplace/{case_id}/apply:
+    post:
+      summary: Apply for an open case (Paralegal)
+      tags:
+        - Job Marketplace
+      parameters:
+        - in: path
+          name: case_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Assigned
+  /lawyer/cases/{case_id}/quote:
+    post:
+      summary: Send Quotation to Client (Lawyer)
+      tags:
+        - Lawyer Dashboard
+      parameters:
+        - in: path
+          name: case_id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - proposed_fee
+              properties:
+                proposed_fee:
+                  type: number
+                fee_notes:
+                  type: string
+      responses:
+        '200':
+          description: Quoted

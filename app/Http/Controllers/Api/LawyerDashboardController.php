@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\LegalCase;
-use App\Models\Wallet;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -93,16 +92,18 @@ class LawyerDashboardController extends Controller
     public function revenueInfo(Request $request): JsonResponse
     {
         $user = $request->user();
-        $wallet = Wallet::firstOrCreate(['user_id' => $user->id]);
+
+        $completedCases = LegalCase::where('expert_id', $user->id)
+            ->where('status', 'completed')
+            ->count();
 
         return response()->json([
             'success' => true,
-            'message' => 'Informasi Pajak dan Penarikan Dana Profesional',
+            'message' => 'Informasi Revenue Profesional',
             'data' => [
-                'available_balance' => $wallet->balance,
-                'ytd_gross_income'  => $wallet->balance, // Dalam integrasi penuh, YTD akan mendotalkan table payment_logs per tahun.
-                'completed_cases'   => LegalCase::where('expert_id', $user->id)->where('status', 'completed')->count(), 
+                'completed_cases' => $completedCases,
             ]
         ]);
     }
 }
+

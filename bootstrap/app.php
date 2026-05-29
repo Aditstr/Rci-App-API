@@ -13,8 +13,45 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->alias([
+            'role' => \App\Http\Middleware\EnsureRole::class,
+        ]);
+
+        $middleware->api(prepend: [
+            \Illuminate\Routing\Middleware\ThrottleRequests::class.':api',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->render(function (\Throwable $e, \Illuminate\Http\Request $request) {
+            if ($request->is('api/*')) {
+                // Ensure all API errors return JSON
+                if ($e instanceof \Illuminate\Validation\ValidationException) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Validasi gagal.',
+                        'errors'  => $e->errors(),
+                    ], 422);
+                }
+
+                if ($e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException || $e instanceof \Symfony\Component\HttpKernel\Exception\NotFoundHttpException) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Resource tidak ditemukan.',
+                    ], 404);
+                }
+
+                if ($e instanceof \Illuminate\Auth\AuthenticationException) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Unauthenticated.',
+                    ], 401);
+                }
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Terjadi kesalahan pada server.',
+                    'error'   => config('app.debug') ? $e->getMessage() : 'Internal Server Error',
+                ], 500);
+            }
+        });
     })->create();

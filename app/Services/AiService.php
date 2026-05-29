@@ -212,11 +212,11 @@ PROMPT;
 
         // 3. --- LOGIKA BARU: TEMBAK API GROQ ---
         try {
-            $apiKey = env('GROQ_API_KEY');
+            $apiKey = config('services.groq.api_key');
 
             if ($apiKey) {
                 $response = Http::withToken($apiKey)->timeout(10)->post('https://api.groq.com/openai/v1/chat/completions', [
-                    'model' => 'llama-3.1-8b-instant', // Model Meta yang kenceng & gratis
+                    'model' => config('services.groq.model', 'llama-3.1-8b-instant'),
                     'messages' => [
                         ['role' => 'system', 'content' => $systemPrompt],
                         ['role' => 'user', 'content' => $message],

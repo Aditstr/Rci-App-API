@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreCaseRequest;
 use App\Models\LegalCase;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -22,7 +23,7 @@ class CaseController extends Controller
         $cases = LegalCase::with(['expert.expertProfile', 'documents'])
             ->where('client_id', $request->user()->id)
             ->orderByDesc('created_at')
-            ->get();
+            ->paginate(15);
 
         return response()->json([
             'success' => true,
@@ -94,13 +95,8 @@ class CaseController extends Controller
         return $map[strtolower(trim($category))] ?? 'general';
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreCaseRequest $request): JsonResponse
     {
-        $request->validate([
-            'title'       => 'required|string|max:255',
-            'description' => 'required|string',
-            'category'    => 'required|string',
-        ]);
 
         $mappedCategory = $this->mapCategory($request->input('category'));
 

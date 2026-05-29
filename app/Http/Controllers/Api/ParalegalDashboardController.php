@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\LegalCase;
-use App\Models\Wallet;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -33,10 +32,6 @@ class ParalegalDashboardController extends Controller
         $completedCount = LegalCase::where('expert_id', $user->id)
             ->where('status', 'completed')
             ->count();
-
-        // Hitung Total Earnings dari wallet atau log payment
-        $wallet = Wallet::where('user_id', $user->id)->first();
-        $totalEarnings = $wallet ? $wallet->balance : 0; 
         
         // Pengecekan test / verifikasi SOP
         $isSopPassed = $user->expertProfile ? $user->expertProfile->is_verified : false;
@@ -48,7 +43,6 @@ class ParalegalDashboardController extends Controller
                 'new_cases_count' => $newCasesCount,
                 'reviewing_count' => $reviewingCount,
                 'completed_count' => $completedCount,
-                'total_earnings'  => $totalEarnings,
                 'is_sop_passed'   => $isSopPassed,
             ]
         ]);
@@ -82,7 +76,7 @@ class ParalegalDashboardController extends Controller
 
         return response()->json([
             'success' => true,
-            'data'    => $query->get()
+            'data'    => $query->paginate(15)
         ]);
     }
 
@@ -102,6 +96,9 @@ class ParalegalDashboardController extends Controller
         $case->status = $request->input('status');
         $case->save();
 
+        // Notify the client about the status update
+        $case->client->notify(new \App\Notifications\CaseStatusUpdated($case, "Status kasus Anda telah diperbarui menjadi " . strtoupper($case->status) . " oleh " . $request->user()->name));
+
         return response()->json([
             'success' => true,
             'message' => 'Status kasus berhasil diperbarui.',
@@ -109,3 +106,4 @@ class ParalegalDashboardController extends Controller
         ]);
     }
 }
+
