@@ -20,7 +20,7 @@
 <script>
 window.onload = function() {
   const ui = SwaggerUIBundle({
-    url: "/swagger.yaml",
+    url: "/swagger.yaml?v={{ time() }}",
     dom_id: '#swagger-ui',
     deepLinking: true,
     presets: [
