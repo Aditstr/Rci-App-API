@@ -373,3 +373,401 @@ paths:
       responses:
         '200':
           description: Quoted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: object
+
+  # ────────────────────────────────────────────────
+  # Payment & Wallet
+  # ────────────────────────────────────────────────
+  /rci/topup:
+    post:
+      summary: Top-Up Wallet (Client)
+      description: |
+        Add funds to the authenticated client's wallet.
+        Requires `auth:sanctum` + `verified` + `role:client`.
+        The amount is credited instantly to the wallet balance.
+      tags:
+        - Payment & Wallet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - amount
+              properties:
+                amount:
+                  type: number
+                  minimum: 1
+                  description: Amount in IDR to top-up
+                  example: 100000
+      responses:
+        '200':
+          description: Wallet topped up successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Wallet topped up successfully.
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      wallet_id:
+                        type: integer
+                      amount:
+                        type: string
+                        example: "100000.00"
+                      type:
+                        type: string
+                        example: deposit
+                      status:
+                        type: string
+                        example: success
+                      description:
+                        type: string
+                      created_at:
+                        type: string
+                        format: date-time
+        '401':
+          description: Unauthenticated
+        '422':
+          description: Validation error or invalid amount
+
+  /rci/upgrade:
+    post:
+      summary: Upgrade to Pro Membership (Client)
+      description: |
+        Upgrade the authenticated client to Pro/Corporate membership.
+        Deducts Rp 50.000 from wallet balance.
+        Requires `auth:sanctum` + `verified` + `role:client`.
+      tags:
+        - Payment & Wallet
+      responses:
+        '200':
+          description: Membership upgraded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Membership upgraded to Pro successfully.
+                  data:
+                    type: object
+                    nullable: true
+        '401':
+          description: Unauthenticated
+        '422':
+          description: Insufficient balance or already Pro
+
+  /rci/escrow/start:
+    post:
+      summary: Lock Funds in Escrow (Client)
+      description: |
+        Lock funds from the client's wallet into escrow for a legal case.
+        The case status changes to `active` after funds are locked.
+        Funds remain in escrow until the case is completed, then released:
+        - **90%** to the assigned expert (paralegal/lawyer)
+        - **10%** platform fee to admin
+        Requires `auth:sanctum` + `verified` + `role:client`.
+      tags:
+        - Payment & Wallet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - case_id
+                - amount
+              properties:
+                case_id:
+                  type: integer
+                  description: ID of the legal case to fund
+                  example: 1
+                amount:
+                  type: number
+                  minimum: 1
+                  description: Amount in IDR to lock in escrow
+                  example: 500000
+      responses:
+        '200':
+          description: Funds locked in escrow
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Funds locked in escrow successfully.
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      wallet_id:
+                        type: integer
+                      amount:
+                        type: string
+                        example: "500000.00"
+                      type:
+                        type: string
+                        example: escrow_hold
+                      status:
+                        type: string
+                        example: pending
+                      reference_type:
+                        type: string
+                        example: App\Models\LegalCase
+                      reference_id:
+                        type: integer
+                      description:
+                        type: string
+                      created_at:
+                        type: string
+                        format: date-time
+        '401':
+          description: Unauthenticated
+        '422':
+          description: Insufficient balance, invalid case, or validation error
+
+  # ────────────────────────────────────────────────
+  # Auth — Missing endpoints
+  # ────────────────────────────────────────────────
+  /auth/logout:
+    post:
+      summary: Logout (Revoke token)
+      description: Revoke the current Sanctum access token.
+      tags:
+        - Authentication
+      responses:
+        '200':
+          description: Logged out successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    example: Logged out successfully.
+        '401':
+          description: Unauthenticated
+
+  # ────────────────────────────────────────────────
+  # Email Verification
+  # ────────────────────────────────────────────────
+  /email/verify/{id}/{hash}:
+    get:
+      summary: Verify Email Address
+      description: Verify a user's email using the signed URL sent via email.
+      tags:
+        - Email Verification
+      security: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: hash
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Email verified
+        '403':
+          description: Invalid or expired signature
+
+  /email/resend:
+    post:
+      summary: Resend Verification Email
+      description: Resend the email verification link.
+      tags:
+        - Email Verification
+      security: []
+      responses:
+        '200':
+          description: Verification email sent
+
+  # ────────────────────────────────────────────────
+  # Paralegal Dashboard — Missing stats
+  # ────────────────────────────────────────────────
+  /paralegal/dashboard/stats:
+    get:
+      summary: Dashboard Statistics (Paralegal)
+      description: |
+        Get summary statistics for the Paralegal dashboard header.
+        Returns counts of new cases, active cases, completed cases, and earnings.
+      tags:
+        - Paralegal Dashboard
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      new_cases_count:
+                        type: integer
+                      active_cases_count:
+                        type: integer
+                      completed_count:
+                        type: integer
+                      total_earnings:
+                        type: string
+        '401':
+          description: Unauthenticated
+
+  # ────────────────────────────────────────────────
+  # Lawyer Dashboard — Missing stats & revenue
+  # ────────────────────────────────────────────────
+  /lawyer/dashboard/stats:
+    get:
+      summary: Dashboard Statistics (Lawyer)
+      description: |
+        Get summary statistics for the Lawyer (The Specialist) dashboard header.
+        Returns new referrals, active cases, completed count, and rating.
+      tags:
+        - Lawyer Dashboard
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      new_referrals_count:
+                        type: integer
+                      active_cases_count:
+                        type: integer
+                      completed_count:
+                        type: integer
+                      rating:
+                        type: number
+                        format: float
+        '401':
+          description: Unauthenticated
+
+  /lawyer/revenue:
+    get:
+      summary: Professional Revenue Info (Lawyer)
+      description: Get professional revenue data and completed case count.
+      tags:
+        - Lawyer Dashboard
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      completed_cases:
+                        type: integer
+        '401':
+          description: Unauthenticated
+
+  # ────────────────────────────────────────────────
+  # Chat — Missing mark-as-read
+  # ────────────────────────────────────────────────
+  /cases/{case_id}/messages/read:
+    put:
+      summary: Mark Messages as Read (Client)
+      description: Mark all unread messages in a case chat as read.
+      tags:
+        - Chat
+      parameters:
+        - in: path
+          name: case_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Messages marked as read
+        '401':
+          description: Unauthenticated
+
+  /cases/{id}:
+    get:
+      summary: Get Case Detail (Client)
+      description: Get detailed information about a specific legal case.
+      tags:
+        - Case Management
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+        '401':
+          description: Unauthenticated
+        '404':
+          description: Case not found
