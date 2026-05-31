@@ -298,6 +298,65 @@ paths:
       responses:
         '200':
           description: OK
+    post:
+      summary: Register a new COD case (Paralegal)
+      description: |
+        Create a new legal case on behalf of a non-tech-savvy client (COD).
+        Generates a shadow client account (if not already existing) and funds the escrow from the paralegal's wallet.
+        Requires `auth:sanctum` + `verified` + `role:paralegal`.
+      tags:
+        - Paralegal Dashboard
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - client_name
+                - client_phone
+                - title
+                - description
+                - category
+                - amount
+              properties:
+                client_name:
+                  type: string
+                  example: "Pak Budi Desa"
+                client_phone:
+                  type: string
+                  example: "08123456789"
+                title:
+                  type: string
+                  example: "Sengketa Batas Tanah Sawah"
+                description:
+                  type: string
+                  example: "Terjadi sengketa batas tanah sawah dengan tetangga sebelah."
+                category:
+                  type: string
+                  example: "hukum perdata"
+                amount:
+                  type: number
+                  example: 200000
+      responses:
+        '201':
+          description: COD Case created and active
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                  data:
+                    type: object
+        '401':
+          description: Unauthenticated
+        '422':
+          description: Validation error or insufficient balance
   /paralegal/cases/{id}/status:
     post:
       summary: Move a case in Kanban (Paralegal)
