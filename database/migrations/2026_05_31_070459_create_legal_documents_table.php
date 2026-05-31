@@ -18,13 +18,13 @@ return new class extends Migration
             $table->text('keywords')->nullable(); // Keywords for lexical matching
             $table->string('category')->index(); // e.g., 'pidana', 'perdata'
             $table->timestamps();
-
-            // Create a full-text search index for Postgres
-            if (config('database.default') === 'pgsql') {
-                DB::statement('CREATE INDEX legal_documents_keywords_idx ON legal_documents USING gin(to_tsvector(\'indonesian\', keywords))');
-                DB::statement('CREATE INDEX legal_documents_content_idx ON legal_documents USING gin(to_tsvector(\'indonesian\', content))');
-            }
         });
+
+        // Create a full-text search index for Postgres
+        if (config('database.default') === 'pgsql') {
+            \Illuminate\Support\Facades\DB::statement('CREATE INDEX legal_documents_keywords_idx ON legal_documents USING gin(to_tsvector(\'indonesian\', keywords))');
+            \Illuminate\Support\Facades\DB::statement('CREATE INDEX legal_documents_content_idx ON legal_documents USING gin(to_tsvector(\'indonesian\', content))');
+        }
     }
 
     /**
