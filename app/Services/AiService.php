@@ -207,10 +207,32 @@ PROMPT;
         
         $topic = $this->detectTopic($message);
 
-        // 2. Ambil Prompt dari CONSTANT yang LU BUAT (Gak gue ubah)
-        $systemPrompt = $isPro ? self::SYSTEM_PROMPT_PRO : self::SYSTEM_PROMPT_FREE;
+        // 2. RAG (Retrieval) - Cari referensi hukum dari database
+        $keywords = explode(' ', strtolower(preg_replace('/[^a-zA-Z0-9\s]/', '', $message)));
+        $keywords = array_filter($keywords, fn($w) => strlen($w) > 3); // Ambil kata > 3 huruf
+        
+        $retrievedDocsText = '';
+        if (count($keywords) > 0) {
+            $query = \App\Models\LegalDocument::query();
+            foreach ($keywords as $word) {
+                $query->orWhere('keywords', 'LIKE', '%' . $word . '%')
+                      ->orWhere('title', 'LIKE', '%' . $word . '%');
+            }
+            $docs = $query->limit(3)->get();
+            
+            if ($docs->count() > 0) {
+                $retrievedDocsText = "\n\nREFERENSI HUKUM MUTLAK (JANGAN MENGARANG PASAL SELAIN REFERENSI BERIKUT):\n";
+                foreach ($docs as $doc) {
+                    $retrievedDocsText .= "- {$doc->title}: {$doc->content}\n";
+                }
+            }
+        }
 
-        // 3. --- LOGIKA BARU: TEMBAK API GROQ ---
+        // 3. Ambil Prompt dari CONSTANT yang LU BUAT dan injek RAG
+        $systemPrompt = $isPro ? self::SYSTEM_PROMPT_PRO : self::SYSTEM_PROMPT_FREE;
+        $systemPrompt .= $retrievedDocsText;
+
+        // 4. --- LOGIKA BARU: TEMBAK API GROQ ---
         try {
             $apiKey = config('services.groq.api_key');
 
