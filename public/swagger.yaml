@@ -175,6 +175,66 @@ paths:
                     type: string
                   user:
                     type: object
+  /auth/forgot-password:
+    post:
+      summary: Send password reset link to user email
+      tags:
+        - Authentication
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: client@rci-app.id
+      responses:
+        '200':
+          description: Password reset link sent successfully
+        '400':
+          description: Validation error or email not found
+  /auth/reset-password:
+    post:
+      summary: Reset user password using the token sent to email
+      tags:
+        - Authentication
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - token
+                - password
+                - password_confirmation
+              properties:
+                email:
+                  type: string
+                  format: email
+                token:
+                  type: string
+                  description: The token from the password reset email
+                password:
+                  type: string
+                  format: password
+                  minLength: 8
+                password_confirmation:
+                  type: string
+                  format: password
+      responses:
+        '200':
+          description: Password reset successfully
+        '400':
+          description: Invalid token or validation error
   /auth/me:
     get:
       summary: Get authenticated user profile

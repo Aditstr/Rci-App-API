@@ -44,6 +44,22 @@ Route::prefix('v1')->group(function () {
         Route::post('/login',    [AuthController::class, 'login'])
             ->middleware('throttle:auth')
             ->name('api.v1.auth.login');
+            
+        // Password Reset
+        Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])
+            ->middleware('throttle:auth')
+            ->name('api.v1.auth.forgot_password');
+        Route::post('/reset-password', [AuthController::class, 'resetPassword'])
+            ->middleware('throttle:auth')
+            ->name('api.v1.auth.reset_password');
+
+        // Required by Laravel's built-in ResetPassword Notification to generate the email link
+        Route::get('/reset-password/{token}', function (string $token) {
+            return response()->json([
+                'message' => 'Silakan buka link ini melalui aplikasi RCI App atau Frontend Web Anda untuk mengubah password.',
+                'token' => $token
+            ]);
+        })->name('password.reset');
 
         // Protected
         Route::middleware('auth:sanctum')->group(function () {

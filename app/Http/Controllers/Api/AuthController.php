@@ -118,5 +118,74 @@ class AuthController extends Controller
             'user'    => $user,
         ]);
     }
+
+    // ─── Forgot Password ────────────────────────────────────────
+
+    /**
+     * Mengirimkan link reset password (berisi token) ke email pengguna.
+     *
+     * POST /api/v1/auth/forgot-password
+     */
+    public function forgotPassword(Request $request): JsonResponse
+    {
+        $request->validate(['email' => 'required|email']);
+
+        $status = \Illuminate\Support\Facades\Password::broker()->sendResetLink(
+            $request->only('email')
+        );
+
+        if ($status === \Illuminate\Support\Facades\Password::RESET_LINK_SENT) {
+            return response()->json([
+                'success' => true,
+                'message' => __($status),
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => __($status),
+        ], 400);
+    }
+
+    // ─── Reset Password ─────────────────────────────────────────
+
+    /**
+     * Memverifikasi token dan mengubah password pengguna.
+     *
+     * POST /api/v1/auth/reset-password
+     */
+    public function resetPassword(Request $request): JsonResponse
+    {
+        $request->validate([
+            'token'    => 'required',
+            'email'    => 'required|email',
+            'password' => 'required|min:8|confirmed',
+        ]);
+
+        $status = \Illuminate\Support\Facades\Password::broker()->reset(
+            $request->only('email', 'password', 'password_confirmation', 'token'),
+            function ($user, $password) {
+                $user->forceFill([
+                    'password' => Hash::make($password)
+                ])->setRememberToken(\Illuminate\Support\Str::random(60));
+
+                $user->save();
+                
+                event(new \Illuminate\Auth\Events\PasswordReset($user));
+            }
+        );
+
+        if ($status === \Illuminate\Support\Facades\Password::PASSWORD_RESET) {
+            return response()->json([
+                'success' => true,
+                'message' => __($status),
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => __($status),
+        ], 400);
+    }
 }
 
