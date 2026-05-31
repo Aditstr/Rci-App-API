@@ -50,8 +50,26 @@ class LegalCase extends Model
             'completed_at' => 'datetime',
             'is_marketplace' => 'boolean',
             'proposed_fee' => 'decimal:2',
-            'fee_structure' => 'array',
         ];
+    }
+
+    /**
+     * The "booted" method of the model.
+     */
+    protected static function booted(): void
+    {
+        static::updated(function (LegalCase $case) {
+            // Trigger automatic refund when status changes to 'cancelled'
+            if ($case->wasChanged('status') && $case->status === 'cancelled') {
+                try {
+                    app(\App\Services\EscrowService::class)->refundEscrow($case);
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::error("Gagal melakukan refund otomatis untuk kasus #{$case->case_number}: " . $e->getMessage());
+                    // Rethrow to rollback any surrounding DB transactions (like Filament's save)
+                    throw $e;
+                }
+            }
+        });
     }
 
     // ──────────────────────────────────────────────

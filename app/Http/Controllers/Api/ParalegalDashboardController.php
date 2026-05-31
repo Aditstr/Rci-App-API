@@ -146,6 +146,11 @@ class ParalegalDashboardController extends Controller
                         'is_verified' => true,
                         'is_active'   => true,
                     ]);
+                } else {
+                    // Consent Gap Protection: Block real accounts from being registered silently
+                    if (!\Illuminate\Support\Str::startsWith($client->email, 'shadow_')) {
+                        throw new \RuntimeException('Nomor HP ini sudah terdaftar sebagai akun riil. Warga harus mendaftar dari aplikasinya sendiri.');
+                    }
                 }
 
                 // 3. Create Case

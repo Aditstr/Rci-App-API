@@ -296,4 +296,54 @@ class EscrowService
             $user->save();
         });
     }
+
+    // ──────────────────────────────────────────────────────────────
+    // 5. REFUND ESCROW — Kembalikan dana ke pembayar jika kasus batal
+    // ──────────────────────────────────────────────────────────────
+
+    /**
+     * Mengembalikan dana escrow yang tertahan (pending) ke wallet asal.
+     * Dipanggil otomatis ketika status kasus menjadi 'cancelled'.
+     *
+     * @param LegalCase $case
+     * @return void
+     */
+    public function refundEscrow(LegalCase $case): void
+    {
+        DB::transaction(function () use ($case) {
+            // Find and lock the pending escrow_hold transaction
+            $escrowTransaction = WalletTransaction::where('type', 'escrow_hold')
+                ->where('status', 'pending')
+                ->where('reference_type', LegalCase::class)
+                ->where('reference_id', $case->id)
+                ->lockForUpdate()
+                ->first();
+
+            // If no pending transaction is found, just return (maybe already released/refunded)
+            if (! $escrowTransaction) {
+                return;
+            }
+
+            // Lock the original payer's wallet
+            $wallet = Wallet::where('id', $escrowTransaction->wallet_id)->lockForUpdate()->firstOrFail();
+
+            // Credit the amount back to the wallet
+            $wallet->credit($escrowTransaction->amount);
+
+            // Record the refund transaction
+            WalletTransaction::create([
+                'wallet_id'      => $wallet->id,
+                'amount'         => $escrowTransaction->amount,
+                'type'           => 'refund',
+                'reference_id'   => $case->id,
+                'reference_type' => LegalCase::class,
+                'status'         => 'success',
+                'description'    => "Refund jaminan (kasus dibatalkan) untuk kasus #{$case->case_number} sebesar Rp "
+                                  . number_format((float) $escrowTransaction->amount, 0, ',', '.'),
+            ]);
+
+            // Mark the original escrow_hold as failed/cancelled
+            $escrowTransaction->update(['status' => 'failed']);
+        });
+    }
 }
