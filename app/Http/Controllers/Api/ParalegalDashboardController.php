@@ -4,11 +4,19 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\LegalCase;
+use App\Models\User;
+use App\Services\EscrowService;
+use App\Http\Requests\StoreCaseByAgentRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 
 class ParalegalDashboardController extends Controller
 {
+    public function __construct(
+        protected EscrowService $escrowService,
+    ) {}
     /**
      * Dapatkan statistik ringkas untuk header Dashboard Paralegal.
      * 
@@ -104,6 +112,122 @@ class ParalegalDashboardController extends Controller
             'message' => 'Status kasus berhasil diperbarui.',
             'data'    => $case
         ]);
+    }
+
+    /**
+     * Daftarkan kasus baru atas nama warga desa (Client on behalf / COD).
+     * 
+     * POST /api/paralegal/cases
+     */
+    public function storeCase(StoreCaseByAgentRequest $request): JsonResponse
+    {
+        $paralegal = $request->user();
+
+        // 1. Map Category
+        $mappedCategory = $this->mapCategory($request->input('category'));
+
+        try {
+            return DB::transaction(function () use ($request, $paralegal, $mappedCategory) {
+                
+                // 2. Find or create Client (Shadow Account) using client_phone
+                $phone = trim($request->input('client_phone'));
+                $client = User::where('phone', $phone)->first();
+
+                if (!$client) {
+                    // Generate a random email that doesn't conflict
+                    $email = 'shadow_' . $phone . '_' . Str::random(5) . '@rci-app.id';
+                    
+                    $client = User::create([
+                        'name'        => $request->input('client_name'),
+                        'phone'       => $phone,
+                        'email'       => $email,
+                        'role'        => 'client',
+                        'password'    => bcrypt(Str::random(16)),
+                        'is_verified' => true,
+                        'is_active'   => true,
+                    ]);
+                }
+
+                // 3. Create Case
+                $case = LegalCase::create([
+                    'case_number'    => LegalCase::generateCaseNumber(),
+                    'client_id'      => $client->id,
+                    'expert_id'      => $paralegal->id,
+                    'title'          => $request->input('title'),
+                    'description'    => $request->input('description'),
+                    'category'       => $mappedCategory,
+                    'status'         => 'submitted', // awal submitted, akan menjadi active saat funds di-lock
+                    'submitted_at'   => now(),
+                    'assigned_at'    => now(),
+                    'is_marketplace' => false, // langsung dipegang oleh agen, tidak masuk marketplace
+                ]);
+
+                // 4. Lock funds in escrow from the PARALEGAL's wallet
+                $amount = (float) $request->input('amount');
+                $this->escrowService->lockFundsForCase($case, $amount, $paralegal);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Kasus warga desa berhasil didaftarkan dan diaktifkan via COD.',
+                    'data'    => [
+                        'case'   => $case->load(['client', 'documents']),
+                        'client' => $client,
+                    ]
+                ], 201);
+            });
+        } catch (\RuntimeException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data'    => null,
+            ], 422);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'An unexpected error occurred.',
+                'data'    => null,
+            ], 500);
+        }
+    }
+
+    /**
+     * Map Indonesian category names from frontend to English enum values in DB.
+     */
+    private function mapCategory(string $category): string
+    {
+        $map = [
+            'hukum pidana'          => 'criminal',
+            'pidana'                => 'criminal',
+            'criminal'              => 'criminal',
+            'hukum perdata'         => 'general',
+            'perdata'               => 'general',
+            'hukum keluarga'        => 'family',
+            'keluarga'              => 'family',
+            'family'                => 'family',
+            'hukum perusahaan'      => 'corporate',
+            'perusahaan'            => 'corporate',
+            'korporasi'             => 'corporate',
+            'corporate'             => 'corporate',
+            'hukum properti'        => 'property',
+            'properti'              => 'property',
+            'property'              => 'property',
+            'hukum ketenagakerjaan' => 'labor',
+            'ketenagakerjaan'       => 'labor',
+            'labor'                 => 'labor',
+            'hukum imigrasi'        => 'immigration',
+            'imigrasi'              => 'immigration',
+            'immigration'           => 'immigration',
+            'hukum kekayaan intelektual' => 'intellectual_property',
+            'kekayaan intelektual'  => 'intellectual_property',
+            'intellectual_property' => 'intellectual_property',
+            'hukum pajak'           => 'tax',
+            'pajak'                 => 'tax',
+            'tax'                   => 'tax',
+            'umum'                  => 'general',
+            'general'               => 'general',
+        ];
+
+        return $map[strtolower(trim($category))] ?? 'general';
     }
 }
 

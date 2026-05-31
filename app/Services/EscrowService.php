@@ -90,7 +90,7 @@ class EscrowService
      *
      * @throws RuntimeException if balance insufficient or amount invalid
      */
-    public function lockFundsForCase(LegalCase $case, float $amount): WalletTransaction
+    public function lockFundsForCase(LegalCase $case, float $amount, ?User $payer = null): WalletTransaction
     {
         if ($amount <= 0) {
             throw new RuntimeException('Jumlah escrow harus lebih dari 0.');
@@ -98,23 +98,23 @@ class EscrowService
 
         $amountStr = number_format($amount, 2, '.', '');
 
-        // The client who submitted the case pays
-        $client = $case->client;
+        // Use the custom payer if provided, otherwise default to the case's client
+        $actualPayer = $payer ?? $case->client;
 
-        if (! $client) {
-            throw new RuntimeException('Kasus ini belum memiliki client yang terdaftar.');
+        if (! $actualPayer) {
+            throw new RuntimeException('Kasus ini belum memiliki pembayar (client/agen) yang valid.');
         }
 
-        return DB::transaction(function () use ($client, $case, $amountStr) {
+        return DB::transaction(function () use ($actualPayer, $case, $amountStr, $payer) {
 
-            // Lock the client's wallet
-            $wallet = Wallet::where('user_id', $client->id)
+            // Lock the payer's wallet
+            $wallet = Wallet::where('user_id', $actualPayer->id)
                 ->lockForUpdate()
                 ->first();
 
             if (! $wallet) {
                 throw new RuntimeException(
-                    "User {$client->name} belum memiliki wallet. Silakan top-up terlebih dahulu."
+                    "User {$actualPayer->name} belum memiliki wallet. Silakan top-up terlebih dahulu."
                 );
             }
 
@@ -126,8 +126,10 @@ class EscrowService
                 );
             }
 
-            // Debit from client wallet
+            // Debit from payer wallet
             $wallet->debit($amountStr);
+
+            $payerLabel = $payer ? "COD Agen: {$payer->name}" : "Client";
 
             // Record escrow_hold transaction (pending until case completed)
             $transaction = WalletTransaction::create([
@@ -137,7 +139,7 @@ class EscrowService
                 'reference_id'   => $case->id,
                 'reference_type' => LegalCase::class,
                 'status'         => 'pending',
-                'description'    => "Escrow hold untuk kasus #{$case->case_number} sebesar Rp "
+                'description'    => "Escrow hold ({$payerLabel}) untuk kasus #{$case->case_number} sebesar Rp "
                                   . number_format((float) $amountStr, 0, ',', '.'),
             ]);
 
