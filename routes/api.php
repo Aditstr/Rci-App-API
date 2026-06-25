@@ -65,6 +65,10 @@ Route::prefix('v1')->group(function () {
         Route::middleware('auth:sanctum')->group(function () {
             Route::post('/logout', [AuthController::class, 'logout'])->name('api.v1.auth.logout');
             Route::get('/me',      [AuthController::class, 'me'])->name('api.v1.auth.me');
+
+            // Re-submit documents after rejection (lawyer/paralegal)
+            Route::post('/resubmit-documents', [AuthController::class, 'resubmitDocuments'])
+                ->name('api.v1.auth.resubmit_documents');
         });
     });
 
@@ -113,7 +117,7 @@ Route::prefix('v1')->group(function () {
     // ──────────────────────────────────────────────
     // Expert Chat & Document Access (Paralegal & Lawyer)
     // ──────────────────────────────────────────────
-    Route::middleware(['auth:sanctum', 'verified', 'role:paralegal,lawyer'])->prefix('expert/cases')->group(function () {
+    Route::middleware(['auth:sanctum', 'verified', 'role:paralegal,lawyer', 'expert.verified'])->prefix('expert/cases')->group(function () {
         Route::get('/{id}/messages', [ChatController::class, 'index'])->name('api.v1.expert.cases.messages.index');
         Route::post('/{id}/messages', [ChatController::class, 'store'])->name('api.v1.expert.cases.messages.store');
         Route::put('/{id}/messages/read', [ChatController::class, 'markAsRead'])->name('api.v1.expert.cases.messages.read');
@@ -125,7 +129,7 @@ Route::prefix('v1')->group(function () {
     // ──────────────────────────────────────────────
     // Paralegal Workspace (Dashboard & Kanban)
     // ──────────────────────────────────────────────
-    Route::middleware(['auth:sanctum', 'verified', 'role:paralegal'])->prefix('paralegal')->group(function () {
+    Route::middleware(['auth:sanctum', 'verified', 'role:paralegal', 'expert.verified'])->prefix('paralegal')->group(function () {
         // Stats & Kanban Board
         Route::get('/dashboard/stats', [ParalegalDashboardController::class, 'stats'])->name('api.v1.paralegal.stats');
         Route::get('/cases',           [ParalegalDashboardController::class, 'cases'])->name('api.v1.paralegal.cases');
@@ -140,7 +144,7 @@ Route::prefix('v1')->group(function () {
     // ──────────────────────────────────────────────
     // Lawyer Dashboard (The Specialist)
     // ──────────────────────────────────────────────
-    Route::middleware(['auth:sanctum', 'verified', 'role:lawyer'])->prefix('lawyer')->group(function () {
+    Route::middleware(['auth:sanctum', 'verified', 'role:lawyer', 'expert.verified'])->prefix('lawyer')->group(function () {
         Route::get('/dashboard/stats',   [LawyerDashboardController::class, 'stats'])->name('api.v1.lawyer.stats');
         Route::post('/cases/{case_id}/quote', [LawyerDashboardController::class, 'sendQuotation'])->name('api.v1.lawyer.cases.quote');
         Route::get('/revenue',           [LawyerDashboardController::class, 'revenueInfo'])->name('api.v1.lawyer.revenue');

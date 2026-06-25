@@ -20,6 +20,16 @@ class ExpertProfile extends Model
         'rating',
         'successful_cases_count',
         'current_workload',
+        // Document uploads
+        'ktp_path',
+        'ijazah_path',
+        'license_card_path',
+        'cv_path',
+        'selfie_path',
+        // Verification workflow
+        'verification_status',
+        'rejection_reason',
+        'verified_at',
     ];
 
     protected function casts(): array
@@ -31,7 +41,27 @@ class ExpertProfile extends Model
             'experience_years' => 'integer',
             'successful_cases_count' => 'integer',
             'current_workload' => 'integer',
+            'verified_at' => 'datetime',
         ];
+    }
+
+    // ──────────────────────────────────────────────
+    // Status Helpers
+    // ──────────────────────────────────────────────
+
+    public function isPending(): bool
+    {
+        return $this->verification_status === 'pending';
+    }
+
+    public function isApproved(): bool
+    {
+        return $this->verification_status === 'approved';
+    }
+
+    public function isRejected(): bool
+    {
+        return $this->verification_status === 'rejected';
     }
 
     // ──────────────────────────────────────────────
