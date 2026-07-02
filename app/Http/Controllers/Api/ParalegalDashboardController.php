@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\LegalCaseResource;
+use App\Http\Resources\UserResource;
 use App\Models\LegalCase;
 use App\Models\User;
 use App\Services\EscrowService;
@@ -11,6 +13,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 class ParalegalDashboardController extends Controller
 {
@@ -84,7 +87,7 @@ class ParalegalDashboardController extends Controller
 
         return response()->json([
             'success' => true,
-            'data'    => $query->paginate(15)
+            'data'    => LegalCaseResource::collection($query->paginate(15))->response()->getData(true)
         ]);
     }
 
@@ -99,7 +102,9 @@ class ParalegalDashboardController extends Controller
             'status' => 'required|string',
         ]);
 
-        $case = LegalCase::where('expert_id', $request->user()->id)->findOrFail($id);
+        $case = LegalCase::findOrFail($id);
+
+        Gate::authorize('updateStatus', $case);
         
         $case->status = $request->input('status');
         $case->save();
@@ -113,7 +118,52 @@ class ParalegalDashboardController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Status kasus berhasil diperbarui.',
-            'data'    => $case
+            'data'    => new LegalCaseResource($case)
+        ]);
+    }
+
+    /**
+     * Eskalasi kasus ke Advokat / Spesialis.
+     * 
+     * POST /api/paralegal/cases/{id}/escalate
+     */
+    public function escalate(Request $request, $id): JsonResponse
+    {
+        $request->validate([
+            'lawyer_id' => ['required', 'integer', 'exists:users,id'],
+        ]);
+
+        $case = LegalCase::findOrFail($id);
+
+        Gate::authorize('escalate', $case);
+
+        // Cari advokat yang sah dan terverifikasi
+        $lawyer = User::where('role', 'lawyer')
+            ->whereHas('expertProfile', function ($query) {
+                $query->where('verification_status', 'approved');
+            })
+            ->findOrFail($request->input('lawyer_id'));
+
+        // Ubah status ke escalated, ubah expert_id ke lawyer_id
+        $case->update([
+            'status'      => 'escalated',
+            'expert_id'   => $lawyer->id,
+            'assigned_at' => now(),
+        ]);
+
+        // Kirim notifikasi ke Lawyer
+        $lawyer->notify(new \App\Notifications\CaseStatusUpdated($case, "Kasus #{$case->case_number} telah diekskalasi kepada Anda oleh paralegal " . $request->user()->name));
+
+        // Kirim notifikasi ke Klien
+        $case->load('client');
+        if ($case->client) {
+            $case->client->notify(new \App\Notifications\CaseStatusUpdated($case, "Kasus Anda telah diekskalasi ke Advokat spesialis " . $lawyer->name . " untuk penanganan lebih lanjut."));
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Kasus berhasil diekskalasi ke Advokat.',
+            'data'    => new LegalCaseResource($case->load(['expert.expertProfile', 'client'])),
         ]);
     }
 
@@ -178,8 +228,8 @@ class ParalegalDashboardController extends Controller
                     'success' => true,
                     'message' => 'Kasus warga desa berhasil didaftarkan dan diaktifkan via COD.',
                     'data'    => [
-                        'case'   => $case->load(['client', 'documents']),
-                        'client' => $client,
+                        'case'   => new LegalCaseResource($case->load(['client', 'documents'])),
+                        'client' => new UserResource($client),
                     ]
                 ], 201);
             });

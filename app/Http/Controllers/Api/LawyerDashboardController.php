@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\LegalCaseResource;
 use App\Models\LegalCase;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class LawyerDashboardController extends Controller
 {
@@ -61,7 +63,9 @@ class LawyerDashboardController extends Controller
             'fee_notes'    => 'nullable|string|max:1000'
         ]);
 
-        $case = LegalCase::where('expert_id', $request->user()->id)->findOrFail($case_id);
+        $case = LegalCase::findOrFail($case_id);
+
+        Gate::authorize('sendQuotation', $case);
 
         $case->proposed_fee = $request->input('proposed_fee');
         $case->fee_notes = $request->input('fee_notes');
@@ -80,7 +84,7 @@ class LawyerDashboardController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Quotation beserta skema bagi hasil (Fee Split) berhasil diajukan ke Klien.',
-            'data'    => $case
+            'data'    => new LegalCaseResource($case)
         ]);
     }
 

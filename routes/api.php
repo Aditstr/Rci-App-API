@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\LawyerDashboardController;
 use App\Http\Controllers\Api\ParalegalDashboardController;
 use App\Http\Controllers\Api\RciApiController;
 use App\Http\Controllers\Api\VerificationController;
+use App\Http\Controllers\Api\WalletController;
 use App\Http\Controllers\Api\ChatController;
 use Illuminate\Support\Facades\Route;
 
@@ -89,12 +90,26 @@ Route::prefix('v1')->group(function () {
         // AI Chat — all authenticated users
         Route::post('/chat', [RciApiController::class, 'chat'])->name('api.v1.rci.chat');
 
-        // Wallet & Escrow — client only
+        // Wallet Info — all authenticated users (client, paralegal, lawyer)
+        Route::get('/wallet',              [WalletController::class, 'show'])->name('api.v1.rci.wallet.show');
+        Route::get('/wallet/transactions', [WalletController::class, 'transactions'])->name('api.v1.rci.wallet.transactions');
+
+        // Wallet Actions & Escrow — client only
         Route::middleware('role:client')->group(function () {
             Route::post('/topup',        [RciApiController::class, 'topup'])->name('api.v1.rci.topup');
             Route::post('/upgrade',      [RciApiController::class, 'upgrade'])->name('api.v1.rci.upgrade');
             Route::post('/escrow/start', [RciApiController::class, 'startCase'])->name('api.v1.rci.escrow.start');
         });
+    });
+
+    // ──────────────────────────────────────────────
+    // Notifications (All authenticated & verified users)
+    // ──────────────────────────────────────────────
+    Route::middleware(['auth:sanctum', 'verified'])->prefix('notifications')->group(function () {
+        Route::get('/',             [\App\Http\Controllers\Api\NotificationController::class, 'index'])->name('api.v1.notifications.index');
+        Route::get('/unread-count', [\App\Http\Controllers\Api\NotificationController::class, 'unreadCount'])->name('api.v1.notifications.unread_count');
+        Route::post('/{id}/read',   [\App\Http\Controllers\Api\NotificationController::class, 'markAsRead'])->name('api.v1.notifications.mark_as_read');
+        Route::post('/read-all',    [\App\Http\Controllers\Api\NotificationController::class, 'markAllAsRead'])->name('api.v1.notifications.mark_all_as_read');
     });
 
     // ──────────────────────────────────────────────
@@ -107,6 +122,10 @@ Route::prefix('v1')->group(function () {
 
         // Document Upload
         Route::post('/{case_id}/documents', [\App\Http\Controllers\Api\CaseDocumentController::class, 'store'])->name('api.v1.cases.documents.store');
+
+        // Quotation Approval / Rejection
+        Route::post('/{id}/quotation/approve', [CaseController::class, 'approveQuotation'])->name('api.v1.cases.quotation.approve');
+        Route::post('/{id}/quotation/reject',  [CaseController::class, 'rejectQuotation'])->name('api.v1.cases.quotation.reject');
 
         // Case Chat Room — client side
         Route::get('/{id}/messages', [ChatController::class, 'index'])->name('api.v1.cases.messages.index');
@@ -135,6 +154,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/cases',           [ParalegalDashboardController::class, 'cases'])->name('api.v1.paralegal.cases');
         Route::post('/cases',          [ParalegalDashboardController::class, 'storeCase'])->name('api.v1.paralegal.cases.store');
         Route::post('/cases/{id}/status', [ParalegalDashboardController::class, 'updateStatus'])->name('api.v1.paralegal.cases.updateStatus');
+        Route::post('/cases/{id}/escalate', [ParalegalDashboardController::class, 'escalate'])->name('api.v1.paralegal.cases.escalate');
 
         // Job Marketplace (Apply Cases)
         Route::get('/marketplace',                [JobMarketplaceController::class, 'index'])->name('api.v1.paralegal.marketplace.index');

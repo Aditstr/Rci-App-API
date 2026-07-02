@@ -25,6 +25,16 @@ class ChatRoomTest extends TestCase
 
         $this->client = User::factory()->create(['role' => 'client']);
         $this->expert = User::factory()->create(['role' => 'lawyer']);
+        
+        // Create verified expert profile for the lawyer so they can bypass middleware
+        \App\Models\ExpertProfile::create([
+            'user_id' => $this->expert->id,
+            'license_number' => 'L-98765',
+            'experience_years' => 5,
+            'verification_status' => 'approved',
+            'is_verified' => true,
+        ]);
+
         $this->unauthorizedUser = User::factory()->create(['role' => 'client']);
 
         $this->case = LegalCase::factory()->create([
@@ -35,7 +45,7 @@ class ChatRoomTest extends TestCase
 
     public function test_unauthorized_user_cannot_view_messages()
     {
-        $response = $this->actingAs($this->unauthorizedUser)->getJson("/api/cases/{$this->case->id}/messages");
+        $response = $this->actingAs($this->unauthorizedUser)->getJson("/api/v1/cases/{$this->case->id}/messages");
 
         $response->assertStatus(403)
                  ->assertJsonPath('success', false);
@@ -43,7 +53,7 @@ class ChatRoomTest extends TestCase
 
     public function test_unauthorized_user_cannot_send_messages()
     {
-        $response = $this->actingAs($this->unauthorizedUser)->postJson("/api/cases/{$this->case->id}/messages", [
+        $response = $this->actingAs($this->unauthorizedUser)->postJson("/api/v1/cases/{$this->case->id}/messages", [
             'message' => 'Hello!',
         ]);
 
@@ -54,7 +64,7 @@ class ChatRoomTest extends TestCase
     public function test_client_can_send_and_view_messages()
     {
         // Send
-        $response = $this->actingAs($this->client)->postJson("/api/cases/{$this->case->id}/messages", [
+        $response = $this->actingAs($this->client)->postJson("/api/v1/cases/{$this->case->id}/messages", [
             'message' => 'Hello from client!',
         ]);
 
@@ -64,18 +74,18 @@ class ChatRoomTest extends TestCase
                  ->assertJsonPath('data.sender_id', $this->client->id);
 
         // View
-        $response = $this->actingAs($this->client)->getJson("/api/cases/{$this->case->id}/messages");
+        $response = $this->actingAs($this->client)->getJson("/api/v1/cases/{$this->case->id}/messages");
 
         $response->assertStatus(200)
                  ->assertJsonPath('success', true)
-                 ->assertJsonCount(1, 'data')
-                 ->assertJsonPath('data.0.message', 'Hello from client!');
+                 ->assertJsonCount(1, 'data.data')
+                 ->assertJsonPath('data.data.0.message', 'Hello from client!');
     }
 
     public function test_expert_can_send_and_view_messages()
     {
         // Send
-        $response = $this->actingAs($this->expert)->postJson("/api/cases/{$this->case->id}/messages", [
+        $response = $this->actingAs($this->expert)->postJson("/api/v1/expert/cases/{$this->case->id}/messages", [
             'message' => 'Hello from expert!',
         ]);
 
@@ -85,23 +95,23 @@ class ChatRoomTest extends TestCase
                  ->assertJsonPath('data.sender_id', $this->expert->id);
 
         // View
-        $response = $this->actingAs($this->expert)->getJson("/api/cases/{$this->case->id}/messages");
+        $response = $this->actingAs($this->expert)->getJson("/api/v1/expert/cases/{$this->case->id}/messages");
 
         $response->assertStatus(200)
                  ->assertJsonPath('success', true)
-                 ->assertJsonCount(1, 'data')
-                 ->assertJsonPath('data.0.message', 'Hello from expert!');
+                 ->assertJsonCount(1, 'data.data')
+                 ->assertJsonPath('data.data.0.message', 'Hello from expert!');
     }
 
     public function test_user_can_mark_messages_as_read()
     {
         // Expert sends a message
-        $this->actingAs($this->expert)->postJson("/api/cases/{$this->case->id}/messages", [
+        $this->actingAs($this->expert)->postJson("/api/v1/expert/cases/{$this->case->id}/messages", [
             'message' => 'Hello from expert!',
         ]);
 
         // Client marks messages as read
-        $response = $this->actingAs($this->client)->putJson("/api/cases/{$this->case->id}/messages/read");
+        $response = $this->actingAs($this->client)->putJson("/api/v1/cases/{$this->case->id}/messages/read");
 
         $response->assertStatus(200)
                  ->assertJsonPath('success', true);

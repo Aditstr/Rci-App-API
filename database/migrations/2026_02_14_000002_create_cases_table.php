@@ -31,9 +31,14 @@ return new class extends Migration
             ])->default('general');
             $table->enum('status', [
                 'submitted',
+                'pending',
                 'ai_analyzing',
+                'assigned',
                 'bidding',
                 'active',
+                'in_progress',
+                'reviewing',
+                'escalated',
                 'completed',
                 'cancelled',
                 'dispute',

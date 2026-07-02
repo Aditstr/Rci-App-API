@@ -52,6 +52,13 @@ return Application::configure(basePath: dirname(__DIR__))
                     ], 401);
                 }
 
+                if ($e instanceof \Illuminate\Auth\Access\AuthorizationException || $e instanceof \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Aksi ini tidak sah (Unauthorized).',
+                    ], 403);
+                }
+
                 return response()->json([
                     'success' => false,
                     'message' => 'Terjadi kesalahan pada server.',

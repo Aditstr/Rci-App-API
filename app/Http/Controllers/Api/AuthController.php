@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\ExpertProfileResource;
+use App\Http\Resources\UserResource;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
 use App\Models\ExpertProfile;
@@ -56,7 +58,7 @@ class AuthController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => $message,
-                'user'    => $user->load('expertProfile'),
+                'user'    => new UserResource($user->load('expertProfile')),
             ], 201);
         } catch (\Throwable $e) {
             return response()->json([
@@ -145,7 +147,7 @@ class AuthController extends Controller
             'success' => true,
             'message' => 'Login successful.',
             'token'   => $token,
-            'user'    => $user,
+            'user'    => new UserResource($user),
         ];
 
         if ($user->isExpert() && $user->expertProfile) {
@@ -193,7 +195,7 @@ class AuthController extends Controller
     {
         $user = $request->user();
 
-        $data = ['user' => $user];
+        $data = ['user' => new UserResource($user)];
 
         if ($user->isExpert()) {
             $user->load('expertProfile');

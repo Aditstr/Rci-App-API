@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\LegalCaseResource;
 use App\Models\LegalCase;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -29,7 +30,7 @@ class JobMarketplaceController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Feed Job Marketplace Paralegal',
-            'data'    => $query->paginate(15)
+            'data'    => LegalCaseResource::collection($query->paginate(15))->response()->getData(true)
         ]);
     }
 
@@ -74,7 +75,7 @@ class JobMarketplaceController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Berhasil melamar kasus dan menugaskan ke profil Anda.',
-            'data'    => $case
+            'data'    => new LegalCaseResource($case)
         ]);
     }
 }

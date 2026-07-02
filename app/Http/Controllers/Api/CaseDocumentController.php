@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\CaseDocumentResource;
 use App\Http\Requests\UploadDocumentRequest;
 use App\Models\CaseDocument;
 use App\Models\LegalCase;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 
 class CaseDocumentController extends Controller
@@ -22,12 +24,9 @@ class CaseDocumentController extends Controller
     {
         $user = $request->user();
         
-        // Ensure the case exists and the user has access to it
-        // (Client owns the case, or Expert is assigned to it)
-        $case = LegalCase::where(function($query) use ($user) {
-            $query->where('client_id', $user->id)
-                  ->orWhere('expert_id', $user->id);
-        })->findOrFail($case_id);
+        $case = LegalCase::findOrFail($case_id);
+        
+        Gate::authorize('uploadDocument', $case);
 
         $file = $request->file('file');
         
@@ -53,7 +52,7 @@ class CaseDocumentController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Dokumen berhasil diunggah.',
-            'data'    => $document
+            'data'    => new CaseDocumentResource($document)
         ], 201);
     }
 }

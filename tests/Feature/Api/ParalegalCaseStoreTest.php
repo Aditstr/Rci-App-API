@@ -25,6 +25,14 @@ class ParalegalCaseStoreTest extends TestCase
             'email_verified_at' => now(),
         ]);
 
+        \App\Models\ExpertProfile::create([
+            'user_id' => $this->paralegal->id,
+            'license_number' => 'PL-12345',
+            'experience_years' => 3,
+            'verification_status' => 'approved',
+            'is_verified' => true,
+        ]);
+
         $this->normalClient = User::factory()->create([
             'role' => 'client',
             'email_verified_at' => now(),

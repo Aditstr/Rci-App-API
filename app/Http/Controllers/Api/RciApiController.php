@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\WalletTransactionResource;
 use App\Models\LegalCase;
 use App\Services\AiService;
 use App\Services\EscrowService;
@@ -82,7 +83,7 @@ class RciApiController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Wallet topped up successfully.',
-                'data'    => $transaction,
+                'data'    => new WalletTransactionResource($transaction),
             ]);
         } catch (RuntimeException $e) {
             return response()->json([
@@ -157,7 +158,7 @@ class RciApiController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Funds locked in escrow successfully.',
-                'data'    => $transaction,
+                'data'    => new WalletTransactionResource($transaction),
             ]);
         } catch (RuntimeException $e) {
             return response()->json([

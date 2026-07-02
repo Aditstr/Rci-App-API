@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\ChatMessageResource;
 use App\Models\ChatMessage;
 use App\Models\LegalCase;
 use Illuminate\Http\JsonResponse;
@@ -23,13 +24,7 @@ class ChatController extends Controller
         $case = LegalCase::findOrFail($caseId);
         $user = $request->user();
 
-        // Ensure user is authorized to view this case's chat room
-        if ($case->client_id !== $user->id && $case->expert_id !== $user->id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized access to this chat room.',
-            ], 403);
-        }
+        Gate::authorize('message', $case);
 
         // Fetch messages with sender info (name, role)
         // Adjust the selected fields based on your User model definition
@@ -40,7 +35,7 @@ class ChatController extends Controller
 
         return response()->json([
             'success' => true,
-            'data'    => $messages,
+            'data'    => ChatMessageResource::collection($messages)->response()->getData(true),
         ]);
     }
 
@@ -54,13 +49,7 @@ class ChatController extends Controller
         $case = LegalCase::findOrFail($caseId);
         $user = $request->user();
 
-        // Ensure user is authorized to send a message to this case
-        if ($case->client_id !== $user->id && $case->expert_id !== $user->id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized access to this chat room.',
-            ], 403);
-        }
+        Gate::authorize('message', $case);
 
         $validated = $request->validate([
             'message'     => ['required', 'string', 'max:5000'],
@@ -86,7 +75,7 @@ class ChatController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Message sent successfully.',
-            'data'    => $chatMessage,
+            'data'    => new ChatMessageResource($chatMessage),
         ], 201);
     }
 
@@ -101,12 +90,7 @@ class ChatController extends Controller
         $case = LegalCase::findOrFail($id);
         $user = $request->user();
 
-        if ($case->client_id !== $user->id && $case->expert_id !== $user->id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Anda tidak memiliki akses ke ruang obrolan kasus ini.',
-            ], 403);
-        }
+        Gate::authorize('message', $case);
 
         // Mark messages as read where sender_id != current user
         ChatMessage::where('case_id', $case->id)
