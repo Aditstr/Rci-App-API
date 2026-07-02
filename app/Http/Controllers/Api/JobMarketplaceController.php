@@ -16,7 +16,8 @@ class JobMarketplaceController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $query = LegalCase::whereNull('expert_id')
+        $query = LegalCase::with(['client:id,name'])
+                          ->whereNull('expert_id')
                           ->where('is_marketplace', true)
                           ->orderByDesc('created_at');
 
@@ -43,7 +44,7 @@ class JobMarketplaceController extends Controller
             ->whereNull('expert_id')
             ->findOrFail($case_id);
 
-        $user = $request->user();
+        $user = $request->user()->load('expertProfile');
 
         // Pemeriksaan kelayakan (Opsional): apakah paralegal terverifikasi SOP?
         if (!$user->expertProfile || !$user->expertProfile->is_verified) {
@@ -63,6 +64,9 @@ class JobMarketplaceController extends Controller
         $case->assigned_at = now();
         $case->is_marketplace = false; // Karena sudah diambil
         $case->save();
+
+        // Eager load client to avoid N+1 lazy loading
+        $case->load('client');
 
         // Notify the client that their case has been taken
         $case->client->notify(new \App\Notifications\CaseStatusUpdated($case, "Kasus Anda telah diambil oleh pakar hukum " . $user->name . " dan sedang diproses."));

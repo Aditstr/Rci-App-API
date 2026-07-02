@@ -24,7 +24,7 @@ class ParalegalDashboardController extends Controller
      */
     public function stats(Request $request): JsonResponse
     {
-        $user = $request->user();
+        $user = $request->user()->load('expertProfile');
 
         // Total Kasus "Baru" (Need Action = pending/assigned but not in progress)
         $newCasesCount = LegalCase::where('expert_id', $user->id)
@@ -103,6 +103,9 @@ class ParalegalDashboardController extends Controller
         
         $case->status = $request->input('status');
         $case->save();
+
+        // Eager load client to avoid N+1 lazy loading
+        $case->load('client');
 
         // Notify the client about the status update
         $case->client->notify(new \App\Notifications\CaseStatusUpdated($case, "Status kasus Anda telah diperbarui menjadi " . strtoupper($case->status) . " oleh " . $request->user()->name));

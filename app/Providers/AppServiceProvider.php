@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -22,6 +23,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Prevent lazy loading in non-production to catch N+1 issues early
+        Model::preventLazyLoading(! app()->isProduction());
         // ── Rate Limiters ────────────────────────────────────────
 
         // General API: 60 requests per minute per user/IP

@@ -16,7 +16,7 @@ class LawyerDashboardController extends Controller
      */
     public function stats(Request $request): JsonResponse
     {
-        $user = $request->user();
+        $user = $request->user()->load('expertProfile');
 
         // Rujukan Baru (Kasus dari paralegal yang di-escalated dan ditugaskan ke role lawyer ini)
         $newReferralsCount = LegalCase::where('expert_id', $user->id)

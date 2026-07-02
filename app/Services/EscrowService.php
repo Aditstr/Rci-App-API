@@ -99,6 +99,10 @@ class EscrowService
         $amountStr = number_format($amount, 2, '.', '');
 
         // Use the custom payer if provided, otherwise default to the case's client
+        // Eager load client to avoid N+1 lazy loading
+        if (! $payer && ! $case->relationLoaded('client')) {
+            $case->load('client');
+        }
         $actualPayer = $payer ?? $case->client;
 
         if (! $actualPayer) {
@@ -178,7 +182,10 @@ class EscrowService
             );
         }
 
-        // Resolve expert (validasi sebelum masuk transaction)
+        // Resolve expert — eager load to avoid N+1 lazy loading
+        if (! $case->relationLoaded('expert')) {
+            $case->load('expert');
+        }
         $expert = $case->expert;
 
         if (! $expert) {

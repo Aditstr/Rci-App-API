@@ -41,7 +41,7 @@ class AuthController extends Controller
 
                 ExpertProfile::create(array_merge([
                     'user_id'             => $user->id,
-                    'license_number'      => '-',   // to be filled after verification
+                    'license_number'      => 'PENDING-' . \Illuminate\Support\Str::uuid()->toString(), // to be filled after verification
                     'verification_status' => 'pending',
                 ], $docPaths));
             }
@@ -124,6 +124,11 @@ class AuthController extends Controller
             throw ValidationException::withMessages([
                 'email' => ['The provided credentials are incorrect.'],
             ]);
+        }
+
+        // Eager load expertProfile to avoid N+1 lazy loading during verification checks
+        if ($user->isExpert()) {
+            $user->load('expertProfile');
         }
 
         if (! $user->hasVerifiedEmail()) {
