@@ -22,21 +22,10 @@ class WalletController extends Controller
     {
         $user = $request->user();
 
-        $wallet = Wallet::where('user_id', $user->id)->first();
-
-        if (! $wallet) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Wallet belum dibuat. Silakan lakukan top-up pertama Anda.',
-                'data'    => [
-                    'balance'             => '0.00',
-                    'total_income'        => '0.00',
-                    'total_spent'         => '0.00',
-                    'pending_escrow'      => '0.00',
-                    'transactions_count'  => 0,
-                ],
-            ]);
-        }
+        $wallet = Wallet::firstOrCreate(
+            ['user_id' => $user->id],
+            ['balance' => 0]
+        );
 
         // Aggregate stats in a single query
         $stats = WalletTransaction::where('wallet_id', $wallet->id)
@@ -81,17 +70,10 @@ class WalletController extends Controller
     {
         $user = $request->user();
 
-        $wallet = Wallet::where('user_id', $user->id)->first();
-
-        if (! $wallet) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Belum ada transaksi.',
-                'data'    => [
-                    'transactions' => [],
-                ],
-            ]);
-        }
+        $wallet = Wallet::firstOrCreate(
+            ['user_id' => $user->id],
+            ['balance' => 0]
+        );
 
         $query = WalletTransaction::where('wallet_id', $wallet->id)
             ->orderByDesc('created_at');
