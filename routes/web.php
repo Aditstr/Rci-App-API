@@ -18,6 +18,16 @@ Route::get('/swagger.yaml', function () {
 
 // ── Admin: Download Expert Documents ────────────────────────
 Route::get('/admin/expert/{profile}/document/{type}', function (ExpertProfile $profile, string $type) {
+    // Security: Only admins can download expert documents (KTP, ijazah, etc.)
+    if (! auth()->user() || ! auth()->user()->isAdmin()) {
+        abort(403, 'Akses ditolak. Hanya admin yang dapat mengunduh dokumen ini.');
+    }
+
+    $allowedTypes = ['ktp', 'ijazah', 'license', 'selfie', 'cv'];
+    if (! in_array($type, $allowedTypes, true)) {
+        abort(404, 'Tipe dokumen tidak valid.');
+    }
+
     $pathMap = [
         'ktp'     => $profile->ktp_path,
         'ijazah'  => $profile->ijazah_path,

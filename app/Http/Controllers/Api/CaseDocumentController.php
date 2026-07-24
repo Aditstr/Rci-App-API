@@ -35,15 +35,15 @@ class CaseDocumentController extends Controller
         $safeName     = preg_replace('/[^A-Za-z0-9\-\_\.]/', '_', $originalName);
         $fileName     = time() . '_' . $safeName;
         
-        // Store in local/s3 storage inside a 'cases/{id}' directory
-        $path = $file->storeAs("cases/{$case->id}", $fileName, 'public');
+        // Store in local storage (NOT public) inside a 'cases/{id}' directory for security
+        $path = $file->storeAs("cases/{$case->id}", $fileName, 'local');
 
         // Save to database
         $document = CaseDocument::create([
             'case_id'       => $case->id,
             'uploaded_by'   => $user->id,
             'file_name'     => $originalName,
-            'file_path'     => '/storage/' . $path,
+            'file_path'     => $path,
             'file_type'     => $file->getMimeType() ?? 'application/octet-stream',
             'file_size'     => $file->getSize(),
             'document_type' => $request->input('document_type', 'other'),

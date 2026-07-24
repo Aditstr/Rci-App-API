@@ -61,9 +61,13 @@ class AuthController extends Controller
                 'user'    => new UserResource($user->load('expertProfile')),
             ], 201);
         } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Registration failed: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+            ]);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Registration failed: ' . $e->getMessage(),
+                'message' => 'Registrasi gagal. Silakan coba lagi nanti.',
                 'token'   => null,
                 'user'    => null,
             ], 500);
@@ -297,8 +301,8 @@ class AuthController extends Controller
 
         $profile->update($updateData);
 
-        // Also reset user verification flag
-        $user->update(['is_verified' => false]);
+        // Also reset user verification flag (using forceFill since is_verified is not mass-assignable)
+        $user->forceFill(['is_verified' => false])->save();
 
         return response()->json([
             'success' => true,

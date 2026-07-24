@@ -20,7 +20,7 @@ class StoreCaseByAgentRequest extends FormRequest
             'client_name'  => ['required', 'string', 'max:255'],
             'client_phone' => ['required', 'string', 'max:20'],
             'title'        => ['required', 'string', 'max:255'],
-            'description'  => ['required', 'string'],
+            'description'  => ['required', 'string', 'max:10000'],
             'category'     => ['required', 'string'],
             'amount'       => ['required', 'numeric', 'min:1000'],
         ];

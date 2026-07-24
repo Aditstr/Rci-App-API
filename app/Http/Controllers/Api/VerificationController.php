@@ -51,23 +51,19 @@ class VerificationController extends Controller
     public function resend(Request $request): JsonResponse
     {
         $request->validate([
-            'email' => 'required|email|exists:users,email',
+            'email' => 'required|email',
         ]);
 
-        $user = User::where('email', $request->email)->firstOrFail();
+        // Security: Always return success to prevent user enumeration
+        $user = User::where('email', $request->email)->first();
 
-        if ($user->hasVerifiedEmail()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Email is already verified.',
-            ], 400);
+        if ($user && ! $user->hasVerifiedEmail()) {
+            $user->sendEmailVerificationNotification();
         }
-
-        $user->sendEmailVerificationNotification();
 
         return response()->json([
             'success' => true,
-            'message' => 'Verification link sent!',
+            'message' => 'Jika email terdaftar dan belum terverifikasi, link verifikasi telah dikirim.',
         ], 200);
     }
 }

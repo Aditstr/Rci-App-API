@@ -11,6 +11,7 @@ use App\Services\AiService;
 use App\Services\EscrowService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use RuntimeException;
 
 class RciApiController extends Controller
@@ -71,7 +72,7 @@ class RciApiController extends Controller
     public function topup(Request $request): JsonResponse
     {
         $request->validate([
-            'amount' => 'required|numeric|min:1',
+            'amount' => 'required|numeric|min:1|max:100000000',
         ]);
 
         try {
@@ -144,11 +145,14 @@ class RciApiController extends Controller
     {
         $request->validate([
             'case_id' => 'required|integer|exists:legal_cases,id',
-            'amount'  => 'required|numeric|min:1',
+            'amount'  => 'required|numeric|min:1|max:100000000',
         ]);
 
         try {
             $case = LegalCase::findOrFail($request->case_id);
+
+            // Security: Ensure the authenticated user is the owner of this case
+            Gate::authorize('view', $case);
 
             $transaction = $this->escrowService->lockFundsForCase(
                 $case,

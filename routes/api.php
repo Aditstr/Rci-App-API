@@ -56,10 +56,9 @@ Route::prefix('v1')->group(function () {
 
         // Required by Laravel's built-in ResetPassword Notification to generate the email link
         Route::get('/reset-password/{token}', function (string $token) {
-            return response()->json([
-                'message' => 'Silakan buka link ini melalui aplikasi RCI App atau Frontend Web Anda untuk mengubah password.',
-                'token' => $token
-            ]);
+            // Security: Do not expose token in JSON response — redirect to frontend
+            $frontendUrl = config('app.frontend_url', config('app.url'));
+            return redirect("{$frontendUrl}/reset-password?token={$token}");
         })->name('password.reset');
 
         // Protected
@@ -81,6 +80,7 @@ Route::prefix('v1')->group(function () {
         ->name('verification.verify');
 
     Route::post('/email/resend', [VerificationController::class, 'resend'])
+        ->middleware('throttle:auth')
         ->name('verification.send');
 
     // ──────────────────────────────────────────────

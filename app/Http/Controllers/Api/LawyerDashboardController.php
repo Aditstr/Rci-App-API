@@ -59,7 +59,7 @@ class LawyerDashboardController extends Controller
     public function sendQuotation(Request $request, $case_id): JsonResponse
     {
         $request->validate([
-            'proposed_fee' => 'required|numeric|min:0',
+            'proposed_fee' => 'required|numeric|min:1000',
             'fee_notes'    => 'nullable|string|max:1000'
         ]);
 

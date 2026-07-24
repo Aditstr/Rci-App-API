@@ -16,7 +16,7 @@ class UploadDocumentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'file'          => ['required', 'file', 'max:10240'], // max 10MB
+            'file'          => ['required', 'file', 'mimes:jpg,jpeg,png,pdf,doc,docx', 'max:10240'], // max 10MB, safe types only
             'document_type' => ['nullable', 'string', 'in:evidence,legal_letter,contract,identification,other'],
         ];
     }

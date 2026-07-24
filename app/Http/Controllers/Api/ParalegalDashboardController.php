@@ -99,7 +99,9 @@ class ParalegalDashboardController extends Controller
     public function updateStatus(Request $request, $id): JsonResponse
     {
         $request->validate([
-            'status' => 'required|string',
+            'status' => ['required', 'string', \Illuminate\Validation\Rule::in([
+                'in_progress', 'reviewing', 'on_hold',
+            ])],
         ]);
 
         $case = LegalCase::findOrFail($id);
@@ -196,9 +198,9 @@ class ParalegalDashboardController extends Controller
                         'email'       => $email,
                         'role'        => 'client',
                         'password'    => bcrypt(Str::random(16)),
-                        'is_verified' => true,
-                        'is_active'   => true,
                     ]);
+                    // Set protected fields explicitly (not mass-assignable for security)
+                    $client->forceFill(['is_verified' => true, 'is_active' => true])->save();
                 } else {
                     // Consent Gap Protection: Block real accounts from being registered silently
                     if (!\Illuminate\Support\Str::startsWith($client->email, 'shadow_')) {

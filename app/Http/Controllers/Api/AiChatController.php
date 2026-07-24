@@ -43,17 +43,12 @@ class AiChatController extends Controller
         $request->validate([
             'message'    => ['required', 'string', 'max:2000'],
             'session_id' => ['nullable', 'string', 'max:100'],
-            'user_id'    => ['nullable', 'integer', 'exists:users,id'],
         ]);
 
         $message = $request->input('message');
 
-        // Resolve authenticated user.
-        // Priority: Sanctum auth → manual user_id param (for testing).
-        $user = $request->user()
-            ?? ($request->filled('user_id')
-                ? User::find($request->input('user_id'))
-                : null);
+        // Resolve authenticated user via Sanctum only (no manual user_id bypass).
+        $user = $request->user();
 
         // ── Pro Member → unlimited access ────────────────────────
         if ($user && $user->hasActiveSubscription()) {
@@ -77,7 +72,7 @@ class AiChatController extends Controller
         }
 
         // ── Guest / Free User → enforce daily limit ──────────────
-        $cacheKey = $this->resolveCacheKey($user, $request->input('session_id'));
+        $cacheKey = $this->resolveCacheKey($user, $request->input('session_id'), $request->ip());
         $used     = (int) Cache::get($cacheKey, 0);
 
         if ($used >= self::FREE_LIMIT) {
@@ -122,15 +117,19 @@ class AiChatController extends Controller
      * - Logged-in user  → "ai_chat_usage:user:{id}"
      * - Guest           → "ai_chat_usage:session:{session_id}"
      */
-    private function resolveCacheKey(?User $user, ?string $sessionId): string
+    private function resolveCacheKey(?User $user, ?string $sessionId, ?string $ipAddress = null): string
     {
         if ($user) {
             return "ai_chat_usage:user:{$user->id}";
         }
 
-        // Ensure guests always have a session identifier
-        $sessionId = $sessionId ?: Str::uuid()->toString();
+        // Use IP address as primary key for guests to prevent rate limit bypass
+        if ($ipAddress) {
+            return "ai_chat_usage:ip:{$ipAddress}";
+        }
 
+        // Fallback to session_id (but prefer IP)
+        $sessionId = $sessionId ?: 'unknown';
         return "ai_chat_usage:session:{$sessionId}";
     }
 }

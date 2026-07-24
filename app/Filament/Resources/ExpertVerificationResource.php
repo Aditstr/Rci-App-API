@@ -221,8 +221,8 @@ class ExpertVerificationResource extends Resource
                             'verified_at'         => now(),
                         ]);
 
-                        // Update user's is_verified flag
-                        $record->user->update(['is_verified' => true]);
+                        // Update user's is_verified flag (forceFill since not mass-assignable)
+                        $record->user->forceFill(['is_verified' => true])->save();
 
                         // Send email notification
                         $record->user->notify(new ExpertApprovedNotification($record));
@@ -257,8 +257,8 @@ class ExpertVerificationResource extends Resource
                             'verified_at'         => null,
                         ]);
 
-                        // Reset user's is_verified flag
-                        $record->user->update(['is_verified' => false]);
+                        // Reset user's is_verified flag (forceFill since not mass-assignable)
+                        $record->user->forceFill(['is_verified' => false])->save();
 
                         // Send email notification
                         $record->user->notify(new ExpertRejectedNotification($record));

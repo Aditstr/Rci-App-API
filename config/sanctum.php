@@ -47,7 +47,7 @@ return [
     |
     */
 
-    'expiration' => 60 * 24 * 7, // 7 days
+    'expiration' => 60 * 24, // 24 hours (security: shorter lifetime for legal/financial app)
 
     /*
     |--------------------------------------------------------------------------

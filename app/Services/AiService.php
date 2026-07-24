@@ -215,8 +215,9 @@ PROMPT;
         if (count($keywords) > 0) {
             $query = \App\Models\LegalDocument::query();
             foreach ($keywords as $word) {
-                $query->orWhere('keywords', 'LIKE', '%' . $word . '%')
-                      ->orWhere('title', 'LIKE', '%' . $word . '%');
+                $escapedWord = str_replace(['%', '_', '\\'], ['\\%', '\\_', '\\\\'], $word);
+                $query->orWhere('keywords', 'LIKE', '%' . $escapedWord . '%')
+                      ->orWhere('title', 'LIKE', '%' . $escapedWord . '%');
             }
             $docs = $query->limit(3)->get();
             
@@ -252,7 +253,6 @@ PROMPT;
                         'answer'        => $response->json('choices.0.message.content'),
                         'topic'         => $topic,
                         'confidence'    => $isPro ? 0.95 : 0.65, // Pro lebih yakin
-                        'system_prompt' => $systemPrompt,
                         'disclaimer'    => $isPro 
                             ? 'Analisis berdasarkan hukum positif Indonesia. Konsultasikan dengan Advokat.' 
                             : 'Jawaban bersifat umum. Hubungi Paralegal kami untuk langkah teknis.',
@@ -286,7 +286,6 @@ PROMPT;
             'answer'        => $answer,
             'topic'         => $topic,
             'confidence'    => round(mt_rand(50, 70) / 100, 2),  // lower confidence for free
-            'system_prompt' => self::SYSTEM_PROMPT_FREE,          // exposed for transparency / debugging
             'disclaimer'    => 'Jawaban ini bersifat umum dan bukan merupakan nasihat hukum resmi. '
                              . 'Untuk analisis pasal mendalam dan strategi kasus, silakan upgrade ke Pro atau hubungi Paralegal kami.',
         ];
@@ -301,7 +300,6 @@ PROMPT;
             'answer'        => $answer,
             'topic'         => $topic,
             'confidence'    => round(mt_rand(85, 98) / 100, 2),  // higher confidence for pro
-            'system_prompt' => self::SYSTEM_PROMPT_PRO,
             'disclaimer'    => 'Analisis ini disusun berdasarkan hukum positif Indonesia yang berlaku. '
                              . 'Untuk kepastian hukum, konsultasikan dengan Advokat yang berpraktik.',
         ];
