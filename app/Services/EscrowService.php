@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\LegalCase;
+use App\Models\Payment;
 use App\Models\User;
 use App\Models\Wallet;
 use App\Models\WalletTransaction;
@@ -18,19 +19,88 @@ class EscrowService
      */
     private const PLATFORM_FEE_PERCENT = 10;
 
+    public function __construct(
+        protected XenditService $xenditService,
+    ) {}
+
     // ──────────────────────────────────────────────────────────────
-    // 1. TOP-UP  — Add funds to a user's wallet
+    // 1. TOP-UP  — Create Xendit Invoice for wallet top-up
     // ──────────────────────────────────────────────────────────────
 
     /**
-     * Increase a user's wallet balance and record a deposit transaction.
+     * Create a Xendit Invoice for wallet top-up.
      *
      * Flow:
-     *  1. Resolve (or create) the user's wallet.
-     *  2. Credit the amount to the wallet balance.
-     *  3. Record a `deposit` transaction with status `success`.
+     *  1. Create a pending Payment record.
+     *  2. Call Xendit API to create an invoice.
+     *  3. Update Payment with Xendit invoice details.
+     *  4. Return the Payment (with invoice URL for the user).
      *
-     * Everything runs inside DB::transaction for atomicity.
+     * The actual wallet credit happens later when Xendit sends the
+     * webhook callback (handled by XenditWebhookController).
+     *
+     * @param  User   $user    The user topping up
+     * @param  float  $amount  Amount in IDR (must be > 0)
+     * @return Payment  The pending payment record with invoice URL
+     *
+     * @throws RuntimeException if amount is invalid or Xendit API fails
+     */
+    public function topUp(User $user, float $amount): Payment
+    {
+        if ($amount <= 0) {
+            throw new RuntimeException('Jumlah top-up harus lebih dari 0.');
+        }
+
+        if ($amount < 10000) {
+            throw new RuntimeException('Jumlah top-up minimum adalah Rp 10.000.');
+        }
+
+        $amountStr = number_format($amount, 2, '.', '');
+
+        return DB::transaction(function () use ($user, $amount, $amountStr) {
+
+            // Ensure wallet exists
+            Wallet::firstOrCreate(
+                ['user_id' => $user->id],
+                ['balance' => '0.00'],
+            );
+
+            // 1. Create pending payment record
+            $payment = Payment::create([
+                'user_id'      => $user->id,
+                'payment_type' => 'topup',
+                'amount'       => $amountStr,
+                'currency'     => 'IDR',
+                'status'       => 'pending',
+            ]);
+
+            // 2. Create Xendit Invoice
+            $externalId = "TOPUP-{$payment->id}-{$user->id}";
+
+            $invoiceData = $this->xenditService->createInvoice(
+                externalId: $externalId,
+                amount: $amount,
+                description: "Top-up saldo RCI Wallet - Rp " . number_format($amount, 0, ',', '.'),
+                payerEmail: $user->email,
+            );
+
+            // 3. Update payment with Xendit details
+            $payment->update([
+                'payment_gateway_ref' => $externalId,
+                'xendit_invoice_id'   => $invoiceData['invoice_id'],
+                'xendit_invoice_url'  => $invoiceData['invoice_url'],
+                'xendit_expiry_date'  => $invoiceData['expiry_date'] ?? null,
+            ]);
+
+            return $payment->fresh();
+        });
+    }
+
+    /**
+     * Direct top-up (instant credit, no payment gateway).
+     *
+     * Kept for internal/admin use or testing scenarios where
+     * instant wallet credit is needed without going through Xendit.
      *
      * @param  User   $user    The user topping up
      * @param  float  $amount  Amount in IDR (must be > 0)
@@ -38,7 +108,7 @@ class EscrowService
      *
      * @throws RuntimeException if amount is invalid
      */
-    public function topUp(User $user, float $amount): WalletTransaction
+    public function directTopUp(User $user, float $amount): WalletTransaction
     {
         if ($amount <= 0) {
             throw new RuntimeException('Jumlah top-up harus lebih dari 0.');
@@ -64,7 +134,7 @@ class EscrowService
                 'amount'         => $amountStr,
                 'type'           => 'deposit',
                 'status'         => 'success',
-                'description'    => "Top-up saldo sebesar Rp " . number_format((float) $amountStr, 0, ',', '.'),
+                'description'    => "Top-up langsung sebesar Rp " . number_format((float) $amountStr, 0, ',', '.'),
             ]);
         });
     }

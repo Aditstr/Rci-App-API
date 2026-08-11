@@ -233,22 +233,27 @@ PROMPT;
         $systemPrompt = $isPro ? self::SYSTEM_PROMPT_PRO : self::SYSTEM_PROMPT_FREE;
         $systemPrompt .= $retrievedDocsText;
 
-        // 4. --- LOGIKA BARU: TEMBAK API GROQ ---
+        // 4. Kirim prompt ke OpenRouter.
         try {
-            $apiKey = config('services.groq.api_key');
+            $apiKey = config('services.openrouter.api_key');
 
             if ($apiKey) {
-                $response = Http::withToken($apiKey)->timeout(10)->post('https://api.groq.com/openai/v1/chat/completions', [
-                    'model' => config('services.groq.model', 'llama-3.1-8b-instant'),
-                    'messages' => [
-                        ['role' => 'system', 'content' => $systemPrompt],
-                        ['role' => 'user', 'content' => $message],
-                    ],
-                    'temperature' => 0.5,
-                ]);
+                $response = Http::withToken($apiKey)
+                    ->timeout(30)
+                    ->withHeaders([
+                        'HTTP-Referer' => config('app.url'),
+                        'X-Title' => config('app.name'),
+                    ])
+                    ->post('https://openrouter.ai/api/v1/chat/completions', [
+                        'model' => config('services.openrouter.model', 'openrouter/free'),
+                        'messages' => [
+                            ['role' => 'system', 'content' => $systemPrompt],
+                            ['role' => 'user', 'content' => $message],
+                        ],
+                        'temperature' => 0.5,
+                    ]);
 
                 if ($response->successful()) {
-                    // Kalau Sukses, Pakai Jawaban AI
                     return [
                         'answer'        => $response->json('choices.0.message.content'),
                         'topic'         => $topic,
@@ -258,7 +263,7 @@ PROMPT;
                             : 'Jawaban bersifat umum. Hubungi Paralegal kami untuk langkah teknis.',
                     ];
                 } else {
-                    Log::error("Groq API Error: " . $response->body());
+                    Log::error('OpenRouter API Error: ' . $response->body());
                 }
             }
         } catch (\Exception $e) {

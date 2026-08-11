@@ -61,30 +61,40 @@ class RciApiController extends Controller
         }
     }
 
-    // ─── Wallet Top-Up ──────────────────────────────────────────
-
     /**
-     * Top up the authenticated user's wallet.
+     * Top up the authenticated user's wallet via Xendit payment.
      *
      * POST /api/rci/topup
      * Body: { "amount": 100000 }
+     *
+     * Returns a Xendit Invoice URL that the user should open
+     * to complete the payment. Wallet will be credited automatically
+     * via webhook when payment is confirmed.
      */
     public function topup(Request $request): JsonResponse
     {
         $request->validate([
-            'amount' => 'required|numeric|min:1|max:100000000',
+            'amount' => 'required|numeric|min:10000|max:100000000',
         ]);
 
         try {
-            $transaction = $this->escrowService->topUp(
+            $payment = $this->escrowService->topUp(
                 $request->user(),
                 (float) $request->amount,
             );
 
             return response()->json([
                 'success' => true,
-                'message' => 'Wallet topped up successfully.',
-                'data'    => new WalletTransactionResource($transaction),
+                'message' => 'Invoice pembayaran berhasil dibuat. Silakan selesaikan pembayaran.',
+                'data'    => [
+                    'payment_id'        => $payment->id,
+                    'amount'            => $payment->amount,
+                    'currency'          => $payment->currency,
+                    'status'            => $payment->status,
+                    'invoice_url'       => $payment->xendit_invoice_url,
+                    'xendit_invoice_id' => $payment->xendit_invoice_id,
+                    'expiry_date'       => $payment->xendit_expiry_date?->toIso8601String(),
+                ],
             ]);
         } catch (RuntimeException $e) {
             return response()->json([
@@ -95,7 +105,7 @@ class RciApiController extends Controller
         } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'An unexpected error occurred.',
+                'message' => 'Gagal membuat invoice pembayaran. Silakan coba lagi.',
                 'data'    => null,
             ], 500);
         }

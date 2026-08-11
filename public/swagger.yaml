@@ -22,7 +22,7 @@ paths:
         Send a legal question to the AI assistant. 
         - **Guest/Free users**: Limited to 3 questions/day, receives general analysis.
         - **Pro users (corporate/lawyer)**: Unlimited access, receives detailed analysis with specific UU/Pasal references.
-        Uses Groq API (LLaMA 3.1) with fallback to built-in responses.
+        Uses OpenRouter API with fallback to built-in responses.
       tags:
         - AI Chat
       security: []

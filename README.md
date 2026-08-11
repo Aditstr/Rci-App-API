@@ -65,6 +65,22 @@ php artisan serve
 ```
 Secara otomatis, REST API akan beroperasi mencakup URL Basis (seperti `http://localhost:8000/api`).
 
+## Import Dokumen RAG
+
+Simpan dokumen hukum dalam format `.txt` atau `.md`, lalu import otomatis:
+
+```bash
+php artisan rag:import rag-documents --category=perdata
+```
+
+Perintah tersebut otomatis memecah dokumen berdasarkan paragraf dan menyimpannya ke tabel `legal_documents`. Untuk satu file:
+
+```bash
+php artisan rag:import rag-documents/kuhperdata.txt --category=perdata --title="KUHPerdata"
+```
+
+PDF belum didukung oleh importer ini. Salin teks dari sumber resmi ke `.txt`/`.md`, dan simpan URL sumber di nama file atau catatan internal.
+
 ## 📚 Dokumentasi API
 Anda dapat menjelajahi titik-akhir API (*Endpoints*) serta parameternya dengan mengacu pada rancangan kontroler yang ada pada direktori:
 * `routes/api.php`

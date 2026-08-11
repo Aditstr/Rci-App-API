@@ -6,10 +6,12 @@ use App\Http\Controllers\Api\CaseController;
 use App\Http\Controllers\Api\JobMarketplaceController;
 use App\Http\Controllers\Api\LawyerDashboardController;
 use App\Http\Controllers\Api\ParalegalDashboardController;
+use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\RciApiController;
 use App\Http\Controllers\Api\VerificationController;
 use App\Http\Controllers\Api\WalletController;
 use App\Http\Controllers\Api\ChatController;
+use App\Http\Controllers\Api\XenditWebhookController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -168,6 +170,22 @@ Route::prefix('v1')->group(function () {
         Route::get('/dashboard/stats',   [LawyerDashboardController::class, 'stats'])->name('api.v1.lawyer.stats');
         Route::post('/cases/{case_id}/quote', [LawyerDashboardController::class, 'sendQuotation'])->name('api.v1.lawyer.cases.quote');
         Route::get('/revenue',           [LawyerDashboardController::class, 'revenueInfo'])->name('api.v1.lawyer.revenue');
+    });
+
+    // ──────────────────────────────────────────────
+    // Xendit Webhooks (Public — no auth required)
+    // ──────────────────────────────────────────────
+    // Xendit sends callbacks to this endpoint when invoice status changes.
+    // Authentication is handled via x-callback-token header verification.
+    Route::post('/xendit/webhook/invoice', [XenditWebhookController::class, 'handleInvoiceCallback'])
+        ->name('api.v1.xendit.webhook.invoice');
+
+    // ──────────────────────────────────────────────
+    // Payments (Authenticated)
+    // ──────────────────────────────────────────────
+    Route::middleware(['auth:sanctum', 'verified'])->prefix('payments')->group(function () {
+        Route::get('/',            [PaymentController::class, 'index'])->name('api.v1.payments.index');
+        Route::get('/{id}/status', [PaymentController::class, 'status'])->name('api.v1.payments.status');
     });
 
 });
