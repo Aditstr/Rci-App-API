@@ -23,10 +23,14 @@ class AdminSeeder extends Seeder
                 'password'          => Hash::make('RciAdmin@2026!'),
                 'role'              => 'admin',
                 'phone'             => '081200000000',
-                'is_verified'       => true,
-                'is_active'         => true,
                 'email_verified_at' => now(),
             ]
+        );
+
+        // PostgreSQL strict boolean: use raw SQL with TRUE/FALSE literals
+        \Illuminate\Support\Facades\DB::statement(
+            'UPDATE users SET is_verified = TRUE, is_active = TRUE WHERE id = ?',
+            [$admin->id]
         );
 
         // Ensure admin has a wallet (for platform fee collection)
