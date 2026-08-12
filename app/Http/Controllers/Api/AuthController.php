@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Auth\Events\Registered;
+use Laravel\Socialite\Facades\Socialite;
 
 class AuthController extends Controller
 {
@@ -190,6 +191,78 @@ class AuthController extends Controller
         }
 
         return response()->json($responseData);
+    }
+
+    // ─── Google OAuth ───────────────────────────────────────────
+
+    /**
+     * Redirect the user to the Google authentication page.
+     *
+     * GET /api/v1/auth/google
+     */
+    public function redirectToGoogle()
+    {
+        return Socialite::driver('google')->stateless()->redirect();
+    }
+
+    /**
+     * Handle callback from Google.
+     *
+     * GET /api/v1/auth/google/callback
+     */
+    public function handleGoogleCallback(Request $request)
+    {
+        try {
+            $googleUser = Socialite::driver('google')->stateless()->user();
+            
+            $user = User::where('email', $googleUser->getEmail())->first();
+
+            if (!$user) {
+                // Register new user as client by default
+                $user = User::create([
+                    'name' => $googleUser->getName(),
+                    'email' => $googleUser->getEmail(),
+                    'google_id' => $googleUser->getId(),
+                    'avatar_url' => $googleUser->getAvatar(),
+                    'role' => 'client',
+                    'email_verified_at' => now(),
+                    'is_verified' => true,
+                    // password remains null
+                ]);
+
+                // Auto-create wallet
+                \App\Models\Wallet::firstOrCreate(
+                    ['user_id' => $user->id],
+                    ['balance' => 0]
+                );
+                
+                event(new Registered($user));
+            } else {
+                // Update existing user with google id if not set
+                if (!$user->google_id) {
+                    $user->update([
+                        'google_id' => $googleUser->getId(),
+                        'avatar_url' => $user->avatar_url ?? $googleUser->getAvatar(),
+                    ]);
+                }
+            }
+
+            // Revoke old tokens
+            $user->tokens()->delete();
+
+            // Generate token
+            $token = $user->createToken('auth-token')->plainTextToken;
+            $userData = json_encode(new UserResource($user));
+            $encodedUser = base64_encode($userData);
+
+            // Redirect back to frontend
+            $frontendUrl = url('/app.html');
+            return redirect("{$frontendUrl}#google-callback?token={$token}&user={$encodedUser}");
+
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Google Auth Error: ' . $e->getMessage());
+            return redirect(url('/app.html#login?error=google_auth_failed'));
+        }
     }
 
     // ─── Logout ─────────────────────────────────────────────────

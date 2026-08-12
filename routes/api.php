@@ -63,6 +63,10 @@ Route::prefix('v1')->group(function () {
             return redirect("{$frontendUrl}/reset-password?token={$token}");
         })->name('password.reset');
 
+        // Google OAuth
+        Route::get('/google', [AuthController::class, 'redirectToGoogle'])->name('api.v1.auth.google');
+        Route::get('/google/callback', [AuthController::class, 'handleGoogleCallback'])->name('api.v1.auth.google.callback');
+
         // Protected
         Route::middleware('auth:sanctum')->group(function () {
             Route::post('/logout', [AuthController::class, 'logout'])->name('api.v1.auth.logout');

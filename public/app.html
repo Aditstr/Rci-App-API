@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RCI - Aplikasi Solusi Hukum</title>
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --bg-hover: #334155;
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --secondary: #3b82f6;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Layout */
+        #sidebar {
+            width: 260px;
+            background-color: var(--bg-card);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary);
+            border-bottom: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+        .nav-links {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px 0;
+        }
+
+        .nav-link {
+            display: block;
+            padding: 12px 20px;
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            background-color: var(--bg-hover);
+            color: var(--text-main);
+            border-left: 4px solid var(--primary);
+        }
+
+        .user-info {
+            padding: 15px 20px;
+            border-top: 1px solid var(--border-color);
+            font-size: 14px;
+        }
+
+        #main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            height: 60px;
+            background-color: var(--bg-card);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+        }
+
+        .content-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        /* Components */
+        .card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        h1, h2, h3 { margin-bottom: 15px; color: var(--text-main); }
+        
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; color: var(--text-muted); font-size: 14px; }
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            background-color: var(--bg-dark);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            border-radius: 4px;
+        }
+        .form-control:focus { outline: none; border-color: var(--primary); }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .btn-primary { background-color: var(--primary); color: white; }
+        .btn-primary:hover { background-color: var(--primary-hover); }
+        .btn-success { background-color: var(--success); color: white; }
+        .btn-danger { background-color: var(--danger); color: white; }
+        .btn-google { background-color: #ea4335; color: white; margin-top: 10px; text-decoration: none; display: block; text-align: center; }
+        .btn-google:hover { background-color: #c5221f; }
+        
+        /* Grid & Flex */
+        .grid { display: grid; gap: 20px; }
+        .grid-2 { grid-template-columns: 1fr 1fr; }
+        .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+        .flex-between { display: flex; justify-content: space-between; align-items: center; }
+        
+        /* Chat */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 60vh;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background-color: var(--bg-dark);
+        }
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+        }
+        .message {
+            margin-bottom: 15px;
+            max-width: 80%;
+        }
+        .message.user {
+            margin-left: auto;
+            background-color: var(--primary);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 15px 15px 0 15px;
+        }
+        .message.ai {
+            margin-right: auto;
+            background-color: var(--bg-card);
+            color: var(--text-main);
+            padding: 10px 15px;
+            border-radius: 15px 15px 15px 0;
+            border: 1px solid var(--border-color);
+        }
+        .chat-input-area {
+            display: flex;
+            padding: 10px;
+            border-top: 1px solid var(--border-color);
+            background-color: var(--bg-card);
+        }
+        .chat-input-area input {
+            flex: 1;
+            margin-right: 10px;
+        }
+
+        /* Alerts */
+        .alert { padding: 10px 15px; border-radius: 4px; margin-bottom: 15px; font-size: 14px; display: none;}
+        .alert-error { background-color: rgba(239, 68, 68, 0.2); border: 1px solid var(--danger); color: #fca5a5; }
+        .alert-success { background-color: rgba(16, 185, 129, 0.2); border: 1px solid var(--success); color: #6ee7b7; }
+
+        /* Tables */
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border-color); }
+        th { color: var(--text-muted); font-weight: 500; }
+        
+        /* Badges */
+        .badge { padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+        .badge-pending { background-color: rgba(245, 158, 11, 0.2); color: var(--warning); }
+        .badge-active { background-color: rgba(16, 185, 129, 0.2); color: var(--success); }
+
+        /* Kanban */
+        .kanban-board { display: flex; gap: 20px; overflow-x: auto; padding-bottom: 20px;}
+        .kanban-col { min-width: 300px; background-color: var(--bg-dark); border-radius: 8px; padding: 15px; border: 1px solid var(--border-color);}
+        .kanban-col h3 { font-size: 16px; margin-bottom: 15px; color: var(--text-muted); text-transform: uppercase; border-bottom: 2px solid var(--border-color); padding-bottom: 10px;}
+        .kanban-item { background-color: var(--bg-card); padding: 15px; border-radius: 6px; margin-bottom: 10px; border: 1px solid var(--border-color); cursor: pointer;}
+        .kanban-item:hover { border-color: var(--primary); }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <div id="sidebar">
+        <div class="sidebar-header">RCI App</div>
+        <div class="nav-links" id="nav-links">
+            <!-- Nav links populated by JS -->
+        </div>
+        <div class="user-info" id="user-info">
+            Not logged in
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div id="main-content">
+        <div class="header">
+            <h2 id="page-title">Loading...</h2>
+            <div>
+                <span id="wallet-balance" style="margin-right: 15px; color: var(--success); font-weight: bold; display: none;">Rp 0</span>
+                <button class="btn btn-primary" id="btn-login-route" onclick="router.navigate('login')" style="display: none;">Login</button>
+                <button class="btn btn-danger" id="btn-logout" onclick="auth.logout()" style="display: none;">Logout</button>
+            </div>
+        </div>
+        
+        <div class="content-area" id="page-content">
+            <!-- Pages will be rendered here -->
+        </div>
+    </div>
+
+    <!-- Page Templates -->
+    
+    <!-- Landing / Public Chat -->
+    <template id="tpl-landing">
+        <div class="card" style="text-align: center; padding: 40px 20px;">
+            <h1 style="font-size: 32px; color: var(--primary); margin-bottom: 10px;">Konsultasi Hukum AI Gratis</h1>
+            <p style="color: var(--text-muted); margin-bottom: 30px; font-size: 18px;">Tanyakan masalah hukum Anda sekarang.</p>
+            
+            <div class="chat-container" style="max-width: 800px; margin: 0 auto; text-align: left;">
+                <div class="chat-messages" id="public-chat-messages">
+                    <div class="message ai">Halo! Saya asisten hukum AI. Ada yang bisa saya bantu terkait masalah hukum Anda hari ini?</div>
+                </div>
+                <div class="chat-input-area">
+                    <input type="text" class="form-control" id="public-chat-input" placeholder="Ketik pertanyaan hukum Anda di sini..." onkeypress="if(event.key === 'Enter') chat.sendPublic()">
+                    <button class="btn btn-primary" onclick="chat.sendPublic()">Kirim</button>
+                </div>
+            </div>
+            
+            <div style="margin-top: 30px;">
+                <p style="color: var(--text-muted); margin-bottom: 15px;">Butuh layanan premium dan pendampingan lawyer?</p>
+                <button class="btn btn-success" onclick="router.navigate('register')">Daftar Akun Klien</button>
+            </div>
+        </div>
+    </template>
+
+    <!-- Login -->
+    <template id="tpl-login">
+        <div style="max-width: 400px; margin: 40px auto;">
+            <div class="card">
+                <h2 style="text-align: center; margin-bottom: 20px;">Masuk ke RCI</h2>
+                <div id="login-alert" class="alert"></div>
+                <form id="login-form" onsubmit="event.preventDefault(); auth.login();">
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="login-email" class="form-control" required value="admin@rci-app.com">
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="login-password" class="form-control" required value="RciAdmin@2026!">
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Login Biasa</button>
+                </form>
+                
+                <div style="margin-top: 15px; text-align: center;">
+                    <p style="color: var(--text-muted); margin-bottom: 5px; font-size: 14px;">Atau masuk dengan:</p>
+                    <a href="http://localhost:8000/api/v1/auth/google" class="btn btn-google">🌐 Login dengan Google</a>
+                </div>
+
+                <p style="text-align: center; margin-top: 20px; font-size: 14px; color: var(--text-muted);">
+                    Belum punya akun? <a href="#register" style="color: var(--primary);">Daftar</a>
+                </p>
+            </div>
+        </div>
+    </template>
+
+    <!-- Register -->
+    <template id="tpl-register">
+        <div style="max-width: 500px; margin: 20px auto;">
+            <div class="card">
+                <h2 style="text-align: center; margin-bottom: 20px;">Daftar Akun RCI</h2>
+                <div id="register-alert" class="alert"></div>
+                <form id="register-form" onsubmit="event.preventDefault(); auth.register();">
+                    <div class="form-group">
+                        <label>Nama Lengkap</label>
+                        <input type="text" id="reg-name" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="reg-email" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="reg-password" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Role</label>
+                        <select id="reg-role" class="form-control">
+                            <option value="client">Klien Umum</option>
+                            <option value="paralegal">Paralegal</option>
+                            <option value="lawyer">Lawyer / Pengacara</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Daftar Biasa</button>
+                </form>
+
+                <div style="margin-top: 15px; text-align: center;">
+                    <p style="color: var(--text-muted); margin-bottom: 5px; font-size: 14px;">Atau daftar dengan:</p>
+                    <a href="http://localhost:8000/api/v1/auth/google" class="btn btn-google">🌐 Daftar dengan Google</a>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- Client Dashboard -->
+    <template id="tpl-client-dashboard">
+        <div class="grid grid-3">
+            <div class="card">
+                <h3>Saldo Escrow</h3>
+                <h1 style="color: var(--success); font-size: 36px;" id="dash-wallet">Rp 0</h1>
+                <button class="btn btn-primary" onclick="router.navigate('wallet')" style="margin-top: 10px; width: 100%;">Top Up</button>
+            </div>
+            <div class="card">
+                <h3>Kasus Aktif</h3>
+                <h1 style="color: var(--primary); font-size: 36px;" id="dash-cases">0</h1>
+                <button class="btn btn-secondary" onclick="router.navigate('cases')" style="margin-top: 10px; width: 100%;">Lihat Kasus</button>
+            </div>
+            <div class="card">
+                <h3>Status Akun</h3>
+                <h1 style="color: var(--warning); font-size: 24px;" id="dash-status">Basic</h1>
+                <button class="btn btn-success" onclick="client.upgradePro()" style="margin-top: 10px; width: 100%;">Upgrade PRO</button>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="flex-between" style="margin-bottom: 20px;">
+                <h3>Kasus Terbaru</h3>
+                <button class="btn btn-primary" onclick="router.navigate('cases-create')">+ Buat Kasus Baru</button>
+            </div>
+            <div style="overflow-x: auto;">
+                <table id="client-cases-table">
+                    <thead>
+                        <tr>
+                            <th>Judul</th>
+                            <th>Status</th>
+                            <th>Kategori</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td colspan="4" style="text-align:center;">Memuat data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </template>
+    
+    <!-- Client: Create Case -->
+    <template id="tpl-client-cases-create">
+        <div class="card" style="max-width: 700px; margin: 0 auto;">
+            <h2>Buat Kasus Baru</h2>
+            <div id="case-alert" class="alert"></div>
+            <form id="case-form" onsubmit="event.preventDefault(); client.submitCase();">
+                <div class="form-group">
+                    <label>Judul Kasus</label>
+                    <input type="text" id="case-title" class="form-control" required placeholder="Contoh: Sengketa Tanah Warisan">
+                </div>
+                <div class="form-group">
+                    <label>Kategori Hukum</label>
+                    <select id="case-category" class="form-control" required>
+                        <option value="pidana">Pidana</option>
+                        <option value="perdata">Perdata</option>
+                        <option value="keluarga">Keluarga (Cerai/Waris)</option>
+                        <option value="bisnis">Bisnis & Perusahaan</option>
+                        <option value="lainnya">Lainnya</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Deskripsi Detail</label>
+                    <textarea id="case-desc" class="form-control" rows="6" required placeholder="Jelaskan masalah hukum yang sedang Anda hadapi secara detail..."></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Submit Kasus</button>
+                <button type="button" class="btn" style="background:var(--bg-hover); color:white;" onclick="window.history.back()">Batal</button>
+            </form>
+        </div>
+    </template>
+
+    <!-- Paralegal Dashboard -->
+    <template id="tpl-paralegal-dashboard">
+        <div class="grid grid-3">
+            <div class="card">
+                <h3>Total Kasus Ditangani</h3>
+                <h1 style="color: var(--primary); font-size: 36px;" id="pl-total-cases">0</h1>
+            </div>
+            <div class="card">
+                <h3>Kasus Menunggu Tindakan</h3>
+                <h1 style="color: var(--warning); font-size: 36px;" id="pl-pending-cases">0</h1>
+            </div>
+            <div class="card">
+                <h3>Pendapatan</h3>
+                <h1 style="color: var(--success); font-size: 36px;" id="pl-revenue">Rp 0</h1>
+            </div>
+        </div>
+        
+        <div class="card" style="margin-top: 20px;">
+            <div class="flex-between">
+                <h3>Marketplace Kasus Terbuka</h3>
+                <button class="btn btn-primary" onclick="router.navigate('marketplace')">Lihat Semua Pekerjaan</button>
+            </div>
+            <p style="color: var(--text-muted); margin-top: 10px;">Cari kasus dari klien yang membutuhkan paralegal.</p>
+        </div>
+    </template>
+    
+    <!-- Paralegal Kanban -->
+    <template id="tpl-paralegal-kanban">
+        <div style="margin-bottom: 20px;">
+            <p style="color: var(--text-muted);">Pindahkan kasus sesuai statusnya. Klik kartu untuk melihat detail.</p>
+        </div>
+        <div class="kanban-board">
+            <!-- Reviewing -->
+            <div class="kanban-col">
+                <h3>Sedang Direview</h3>
+                <div id="kb-reviewing">
+                    <div style="color: var(--text-muted); font-size: 14px; text-align: center; padding: 10px;">Memuat...</div>
+                </div>
+            </div>
+            
+            <!-- Researching -->
+            <div class="kanban-col">
+                <h3>Riset / Investigasi</h3>
+                <div id="kb-researching"></div>
+            </div>
+            
+            <!-- Escalated to Lawyer -->
+            <div class="kanban-col">
+                <h3>Dieskalasi (Menunggu Lawyer)</h3>
+                <div id="kb-escalated"></div>
+            </div>
+            
+            <!-- Solved -->
+            <div class="kanban-col">
+                <h3>Selesai</h3>
+                <div id="kb-solved"></div>
+            </div>
+        </div>
+    </template>
+
+    <!-- Lawyer Dashboard -->
+    <template id="tpl-lawyer-dashboard">
+        <div class="grid grid-3">
+            <div class="card">
+                <h3>Kasus Eskalasi Baru</h3>
+                <h1 style="color: var(--danger); font-size: 36px;" id="lw-new-escalations">0</h1>
+            </div>
+            <div class="card">
+                <h3>Total Kasus Aktif</h3>
+                <h1 style="color: var(--primary); font-size: 36px;" id="lw-active-cases">0</h1>
+            </div>
+            <div class="card">
+                <h3>Total Pendapatan</h3>
+                <h1 style="color: var(--success); font-size: 36px;" id="lw-revenue">Rp 0</h1>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <h3>Daftar Kasus Membutuhkan Penawaran (Quotation)</h3>
+            <div style="overflow-x: auto; margin-top: 15px;">
+                <table id="lawyer-cases-table">
+                    <thead>
+                        <tr>
+                            <th>Klien</th>
+                            <th>Judul Kasus</th>
+                            <th>Paralegal Pengeskalasi</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td colspan="4" style="text-align:center;">Memuat data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </template>
+
+
+    <!-- Application Logic -->
+    <script>
+        const API_URL = 'http://127.0.0.1:8000/api/v1';
+        
+        // State
+        const state = {
+            token: localStorage.getItem('rci_token'),
+            user: JSON.parse(localStorage.getItem('rci_user')) || null,
+            wallet: null
+        };
+
+        // Navigation Config
+        const roleNav = {
+            guest: [
+                { id: 'landing', title: 'Tanya AI (Freemium)', icon: '💬' },
+                { id: 'login', title: 'Login', icon: '🔑' },
+                { id: 'register', title: 'Daftar', icon: '📝' }
+            ],
+            client: [
+                { id: 'client-dashboard', title: 'Dashboard Klien', icon: '📊' },
+                { id: 'cases', title: 'Kasus Saya', icon: '📁' },
+                { id: 'wallet', title: 'Dompet & Escrow', icon: '💰' },
+                { id: 'auth-chat', title: 'Premium AI Chat', icon: '🤖' }
+            ],
+            paralegal: [
+                { id: 'paralegal-dashboard', title: 'Dashboard Paralegal', icon: '📊' },
+                { id: 'kanban', title: 'Kanban Board', icon: '📋' },
+                { id: 'marketplace', title: 'Bursa Kasus', icon: '🛒' },
+                { id: 'auth-chat', title: 'Pro AI Assistant', icon: '🤖' }
+            ],
+            lawyer: [
+                { id: 'lawyer-dashboard', title: 'Dashboard Lawyer', icon: '⚖️' },
+                { id: 'cases-lawyer', title: 'Manajemen Kasus', icon: '📁' },
+                { id: 'wallet', title: 'Pendapatan', icon: '💰' },
+                { id: 'auth-chat', title: 'Legal AI Assistant', icon: '🤖' }
+            ],
+            admin: [
+                { id: 'admin-dashboard', title: 'Super Admin', icon: '👑' }
+            ]
+        };
+
+        // Core App Logic
+        const app = {
+            init: () => {
+                app.updateSidebar();
+                app.updateHeader();
+                
+                // Handle routing based on hash
+                window.addEventListener('hashchange', router.handle);
+                
+                // Initial route load
+                if(window.location.hash) {
+                    router.handle();
+                } else {
+                    router.navigate(state.user ? `${state.user.role}-dashboard` : 'landing');
+                }
+
+                if(state.user) {
+                    app.fetchWallet();
+                }
+            },
+            
+            updateSidebar: () => {
+                const role = state.user ? state.user.role : 'guest';
+                const links = roleNav[role] || roleNav['guest'];
+                
+                let html = '';
+                links.forEach(link => {
+                    html += `<a class="nav-link" onclick="router.navigate('${link.id}')">${link.icon} ${link.title}</a>`;
+                });
+                
+                document.getElementById('nav-links').innerHTML = html;
+                
+                if (state.user) {
+                    document.getElementById('user-info').innerHTML = `
+                        <div style="font-weight: bold; color: white; margin-bottom: 5px;">${state.user.name}</div>
+                        <div style="color: var(--primary); text-transform: capitalize;">${state.user.role}</div>
+                        ${state.user.is_verified ? '<span class="badge badge-active" style="display:inline-block; margin-top:5px;">Verified</span>' : '<span class="badge badge-pending" style="display:inline-block; margin-top:5px;">Unverified</span>'}
+                    `;
+                } else {
+                    document.getElementById('user-info').innerHTML = 'Not logged in';
+                }
+            },
+            
+            updateHeader: () => {
+                if (state.user) {
+                    document.getElementById('btn-login-route').style.display = 'none';
+                    document.getElementById('btn-logout').style.display = 'inline-block';
+                    document.getElementById('wallet-balance').style.display = 'inline-block';
+                } else {
+                    document.getElementById('btn-login-route').style.display = 'inline-block';
+                    document.getElementById('btn-logout').style.display = 'none';
+                    document.getElementById('wallet-balance').style.display = 'none';
+                }
+            },
+
+            fetchWallet: async () => {
+                if(!state.user || state.user.role !== 'client') return; // For now only client wallet displayed in header
+                try {
+                    const res = await api.get('/rci/wallet');
+                    if(res.success && res.data) {
+                        state.wallet = res.data;
+                        document.getElementById('wallet-balance').innerText = `Rp ${parseInt(res.data.balance).toLocaleString('id-ID')}`;
+                        if(document.getElementById('dash-wallet')) {
+                            document.getElementById('dash-wallet').innerText = `Rp ${parseInt(res.data.balance).toLocaleString('id-ID')}`;
+                        }
+                    }
+                } catch (e) {
+                    console.error("Wallet fetch error", e);
+                }
+            },
+            
+            showAlert: (id, msg, type = 'error') => {
+                const el = document.getElementById(id);
+                if(!el) return;
+                el.innerText = msg;
+                el.className = `alert alert-${type}`;
+                el.style.display = 'block';
+                setTimeout(() => { el.style.display = 'none'; }, 5000);
+            }
+        };
+
+        // Router
+        const router = {
+            navigate: (path) => {
+                window.location.hash = path;
+            },
+            
+            handle: () => {
+                const rawHash = window.location.hash.substring(1) || 'landing';
+                const [hashPath, queryString] = rawHash.split('?');
+                const path = hashPath || 'landing';
+                
+                // Handle Google callback specifically
+                if (path === 'google-callback') {
+                    const params = new URLSearchParams(queryString);
+                    const token = params.get('token');
+                    const userBase64 = params.get('user');
+                    
+                    if (token && userBase64) {
+                        try {
+                            const user = JSON.parse(atob(userBase64));
+                            state.token = token;
+                            state.user = user;
+                            localStorage.setItem('rci_token', token);
+                            localStorage.setItem('rci_user', JSON.stringify(user));
+                            
+                            app.updateSidebar();
+                            app.updateHeader();
+                            
+                            const routes = {
+                                'admin': 'admin-dashboard',
+                                'lawyer': 'lawyer-dashboard',
+                                'paralegal': 'paralegal-dashboard',
+                                'client': 'client-dashboard'
+                            };
+                            router.navigate(routes[user.role] || 'landing');
+                        } catch (e) {
+                            console.error('Error parsing google callback data', e);
+                            router.navigate('login');
+                        }
+                    } else {
+                        router.navigate('login');
+                    }
+                    return;
+                }
+                
+                // Active nav link styling
+                document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+                const activeLink = document.querySelector(`.nav-link[onclick="router.navigate('${path}')"]`);
+                if(activeLink) activeLink.classList.add('active');
+
+                // Page Title mapping
+                const titles = {
+                    'landing': 'Tanya AI (Gratis)',
+                    'login': 'Login',
+                    'register': 'Pendaftaran Akun',
+                    'client-dashboard': 'Dashboard Klien',
+                    'cases-create': 'Buat Kasus Baru',
+                    'paralegal-dashboard': 'Workspace Paralegal',
+                    'kanban': 'Manajemen Kasus (Kanban)',
+                    'lawyer-dashboard': 'Dashboard Pengacara'
+                };
+                document.getElementById('page-title').innerText = titles[path] || 'RCI App';
+
+                // Load template
+                const contentArea = document.getElementById('page-content');
+                
+                // Fallback basic auth guard
+                if (['client-dashboard', 'cases', 'kanban', 'lawyer-dashboard'].includes(path) && !state.user) {
+                    router.navigate('login');
+                    return;
+                }
+
+                // If template exists, render it
+                const template = document.getElementById(`tpl-${path}`);
+                if (template) {
+                    contentArea.innerHTML = template.innerHTML;
+                    
+                    // Run controller logic based on path
+                    if(path === 'client-dashboard') client.loadDashboard();
+                    if(path === 'paralegal-dashboard') paralegal.loadDashboard();
+                    if(path === 'lawyer-dashboard') lawyer.loadDashboard();
+                    if(path === 'kanban') paralegal.loadKanban();
+                } else {
+                    contentArea.innerHTML = `
+                        <div class="card" style="text-align:center; padding: 50px;">
+                            <h1 style="color:var(--text-muted)">🚧 Under Construction 🚧</h1>
+                            <p>Halaman '${path}' sedang dalam pengembangan.</p>
+                        </div>
+                    `;
+                }
+            }
+        };
+
+        // API Helper
+        const api = {
+            request: async (endpoint, options = {}) => {
+                const url = API_URL + endpoint;
+                const headers = {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                };
+                
+                if (state.token) {
+                    headers['Authorization'] = `Bearer ${state.token}`;
+                }
+                
+                const config = {
+                    ...options,
+                    headers: { ...headers, ...options.headers }
+                };
+
+                if (config.body && typeof config.body === 'object' && !(config.body instanceof FormData)) {
+                    config.body = JSON.stringify(config.body);
+                }
+
+                try {
+                    const response = await fetch(url, config);
+                    const data = await response.json();
+                    
+                    if (response.status === 401) {
+                        auth.logout(false); // auto logout on unauth
+                    }
+                    
+                    if (!response.ok) {
+                        throw { status: response.status, data };
+                    }
+                    
+                    return data;
+                } catch (error) {
+                    console.error('API Error:', error);
+                    throw error;
+                }
+            },
+            get: (endpoint) => api.request(endpoint, { method: 'GET' }),
+            post: (endpoint, body) => api.request(endpoint, { method: 'POST', body }),
+            put: (endpoint, body) => api.request(endpoint, { method: 'PUT', body }),
+        };
+
+        // Auth Controller
+        const auth = {
+            login: async () => {
+                const email = document.getElementById('login-email').value;
+                const password = document.getElementById('login-password').value;
+                
+                try {
+                    const res = await api.post('/auth/login', { email, password });
+                    if(res.token) {
+                        state.token = res.token;
+                        state.user = res.user;
+                        localStorage.setItem('rci_token', res.token);
+                        localStorage.setItem('rci_user', JSON.stringify(res.user));
+                        
+                        app.updateSidebar();
+                        app.updateHeader();
+                        router.navigate(`${state.user.role}-dashboard`);
+                    }
+                } catch (e) {
+                    const msg = e.data?.message || 'Login gagal. Cek email dan password.';
+                    app.showAlert('login-alert', msg);
+                }
+            },
+            
+            register: async () => {
+                const name = document.getElementById('reg-name').value;
+                const email = document.getElementById('reg-email').value;
+                const password = document.getElementById('reg-password').value;
+                const role = document.getElementById('reg-role').value;
+                
+                try {
+                    const res = await api.post('/auth/register', { 
+                        name, 
+                        email, 
+                        password,
+                        password_confirmation: password,
+                        role 
+                    });
+                    app.showAlert('register-alert', 'Registrasi sukses! Silakan verify email (via artisan tinker) lalu login.', 'success');
+                    setTimeout(() => router.navigate('login'), 3000);
+                } catch (e) {
+                    let msg = e.data?.message || 'Registrasi gagal.';
+                    if (e.data?.errors) {
+                        msg = Object.values(e.data.errors).flat().join('<br>');
+                    }
+                    app.showAlert('register-alert', msg);
+                }
+            },
+            
+            logout: async (callApi = true) => {
+                if (callApi && state.token) {
+                    try { await api.post('/auth/logout'); } catch (e) {}
+                }
+                
+                state.token = null;
+                state.user = null;
+                localStorage.removeItem('rci_token');
+                localStorage.removeItem('rci_user');
+                
+                app.updateSidebar();
+                app.updateHeader();
+                router.navigate('landing');
+            }
+        };
+
+        // Public Chat (Freemium)
+        const chat = {
+            sendPublic: async () => {
+                const input = document.getElementById('public-chat-input');
+                const msg = input.value.trim();
+                if(!msg) return;
+                
+                const container = document.getElementById('public-chat-messages');
+                
+                // Add user msg
+                container.innerHTML += `<div class="message user">${msg}</div>`;
+                input.value = '';
+                input.disabled = true;
+                
+                // Add loading indicator
+                const id = 'loading-' + Date.now();
+                container.innerHTML += `<div class="message ai" id="${id}">... AI sedang mengetik ...</div>`;
+                container.scrollTop = container.scrollHeight;
+                
+                try {
+                    const res = await api.post('/chat/send', { message: msg });
+                    document.getElementById(id).innerText = res.reply || res.message;
+                } catch (e) {
+                    let err = "Terjadi kesalahan.";
+                    if(e.status === 429) err = "Limit percobaan gratis Anda habis. Silakan mendaftar untuk lanjut.";
+                    document.getElementById(id).innerHTML = `<span style="color:var(--danger)">${err}</span>`;
+                }
+                input.disabled = false;
+                input.focus();
+                container.scrollTop = container.scrollHeight;
+            }
+        };
+
+        // Client Controller
+        const client = {
+            loadDashboard: async () => {
+                try {
+                    // Load Cases
+                    const res = await api.get('/cases');
+                    if(res.success) {
+                        document.getElementById('dash-cases').innerText = res.data.length;
+                        
+                        let tbody = '';
+                        if(res.data.length === 0) {
+                            tbody = '<tr><td colspan="4" style="text-align:center;">Belum ada kasus</td></tr>';
+                        } else {
+                            res.data.slice(0, 5).forEach(c => { // Show last 5
+                                let badge = 'badge-pending';
+                                if(['solved', 'escrow_funded'].includes(c.status)) badge = 'badge-active';
+                                
+                                tbody += `
+                                <tr>
+                                    <td><strong>${c.title}</strong></td>
+                                    <td><span class="badge ${badge}">${c.status.toUpperCase()}</span></td>
+                                    <td style="text-transform: capitalize;">${c.category}</td>
+                                    <td><button class="btn btn-primary" style="padding: 5px 10px; font-size:12px;" onclick="alert('Detail belum diimplementasikan di frontend ini')">Lihat</button></td>
+                                </tr>`;
+                            });
+                        }
+                        document.getElementById('client-cases-table').querySelector('tbody').innerHTML = tbody;
+                    }
+                } catch(e) {
+                    console.error("Dashboard error", e);
+                }
+            },
+            
+            submitCase: async () => {
+                const title = document.getElementById('case-title').value;
+                const category = document.getElementById('case-category').value;
+                const description = document.getElementById('case-desc').value;
+                
+                try {
+                    await api.post('/cases', { title, category, description });
+                    app.showAlert('case-alert', 'Kasus berhasil dibuat!', 'success');
+                    setTimeout(() => router.navigate('client-dashboard'), 1500);
+                } catch (e) {
+                    app.showAlert('case-alert', e.data?.message || 'Gagal membuat kasus.');
+                }
+            },
+            
+            upgradePro: () => {
+                alert("Simulasi: Redirect ke Xendit Checkout untuk bayar langganan PRO Rp 99.000 / bulan.");
+            }
+        };
+
+        // Paralegal Controller
+        const paralegal = {
+            loadDashboard: async () => {
+                try {
+                    const res = await api.get('/paralegal/dashboard/stats');
+                    if(res.success) {
+                        document.getElementById('pl-total-cases').innerText = res.data.cases.total_handled;
+                        document.getElementById('pl-pending-cases').innerText = res.data.cases.active;
+                        document.getElementById('pl-revenue').innerText = res.data.revenue.total_formatted || 'Rp 0';
+                    }
+                } catch(e) {
+                    console.error("PL Dashboard error", e);
+                }
+            },
+            
+            loadKanban: async () => {
+                try {
+                    const res = await api.get('/paralegal/cases');
+                    if(res.success && res.data) {
+                        const cols = {
+                            reviewing: document.getElementById('kb-reviewing'),
+                            researching: document.getElementById('kb-researching'),
+                            escalated: document.getElementById('kb-escalated'),
+                            solved: document.getElementById('kb-solved')
+                        };
+                        
+                        // Clear cols
+                        Object.values(cols).forEach(col => col.innerHTML = '');
+                        
+                        if(res.data.length === 0) {
+                            cols.reviewing.innerHTML = '<div style="color:var(--text-muted); text-align:center; padding:10px;">Kosong</div>';
+                        }
+                        
+                        res.data.forEach(c => {
+                            const html = `
+                                <div class="kanban-item">
+                                    <div style="font-weight:bold; margin-bottom:5px;">${c.title}</div>
+                                    <div style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">Klien: ${c.client ? c.client.name : 'Unknown'}</div>
+                                    <div class="badge badge-pending">${c.category}</div>
+                                </div>
+                            `;
+                            
+                            // Map status to columns (simplification)
+                            if(c.status === 'reviewing_by_paralegal' || c.status === 'open') cols.reviewing.innerHTML += html;
+                            else if(c.status === 'need_lawyer' || c.status === 'waiting_quotation') cols.escalated.innerHTML += html;
+                            else if(c.status === 'solved') cols.solved.innerHTML += html;
+                            else cols.researching.innerHTML += html;
+                        });
+                    }
+                } catch(e) {
+                    console.error("KB error", e);
+                }
+            }
+        };
+
+        // Lawyer Controller
+        const lawyer = {
+            loadDashboard: async () => {
+                try {
+                    const res = await api.get('/lawyer/dashboard/stats');
+                    if(res.success) {
+                        document.getElementById('lw-active-cases').innerText = res.data.cases.active_handling;
+                        document.getElementById('lw-new-escalations').innerText = res.data.cases.need_quotation;
+                        document.getElementById('lw-revenue').innerText = res.data.revenue.total_formatted || 'Rp 0';
+                    }
+                } catch(e) {
+                    console.error("LW Dashboard error", e);
+                }
+            }
+        };
+
+        // Init App when DOM loads
+        document.addEventListener('DOMContentLoaded', app.init);
+
+    </script>
+</body>
+</html>
