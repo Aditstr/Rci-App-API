@@ -4,8 +4,10 @@ info:
   description: API Documentation for RCI Mobile & Web Applications. All endpoints except AI Chat require a Sanctum Bearer token.
   version: 1.0.0
 servers:
-  - url: /api/v1
-    description: Current API Version
+  - url: https://rci-app-api.onrender.com/api/v1
+    description: Production API (Render)
+  - url: http://localhost:8000/api/v1
+    description: Local API
 components:
   securitySchemes:
     bearerAuth:
