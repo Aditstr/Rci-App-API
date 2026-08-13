@@ -116,7 +116,7 @@ paths:
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               type: object
               required:
@@ -140,6 +140,22 @@ paths:
                 role:
                   type: string
                   enum: [client, paralegal, lawyer, corporate]
+                ktp:
+                  type: string
+                  format: binary
+                  description: Required for paralegal & lawyer
+                ijazah:
+                  type: string
+                  format: binary
+                  description: Required for paralegal & lawyer
+                license_card:
+                  type: string
+                  format: binary
+                  description: Required for lawyer
+                selfie:
+                  type: string
+                  format: binary
+                  description: Required for lawyer
       responses:
         '201':
           description: Created
@@ -988,6 +1004,25 @@ paths:
       description: Allows a rejected lawyer or paralegal to resubmit their documents for verification.
       tags:
         - Authentication
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                ktp:
+                  type: string
+                  format: binary
+                ijazah:
+                  type: string
+                  format: binary
+                license_card:
+                  type: string
+                  format: binary
+                selfie:
+                  type: string
+                  format: binary
       responses:
         '200':
           description: OK

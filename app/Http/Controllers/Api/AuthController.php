@@ -252,16 +252,16 @@ class AuthController extends Controller
 
             // Generate token
             $token = $user->createToken('auth-token')->plainTextToken;
-            $userData = json_encode(new UserResource($user));
-            $encodedUser = base64_encode($userData);
+            // Removed encoding of user data in URL as the frontend fetches it via /auth/me
 
             // Redirect back to frontend URL defined in .env
             $frontendUrl = env('FRONTEND_URL', 'http://localhost:3000');
-            return redirect("{$frontendUrl}/auth/google/callback?token={$token}&user={$encodedUser}");
+            return redirect("{$frontendUrl}/auth/google/callback#token={$token}");
 
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('Google Auth Error: ' . $e->getMessage());
-            return redirect(url('/app.html#login?error=google_auth_failed'));
+            $frontendUrl = env('FRONTEND_URL', 'http://localhost:3000');
+            return redirect("{$frontendUrl}/auth/google/callback#error=google_auth_failed");
         }
     }
 
