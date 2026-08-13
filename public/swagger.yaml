@@ -304,6 +304,40 @@ paths:
       responses:
         '201':
           description: Document Uploaded
+  /cases/{id}/review:
+    post:
+      summary: Submit a Review & Rating (Client)
+      description: Clients can submit a review (1-5 stars) and comment after a case is completed. This triggers automatic profile rating updates for the assigned expert.
+      tags:
+        - Case Management
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - rating
+              properties:
+                rating:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                  example: 5
+                comment:
+                  type: string
+                  example: "Pengacara sangat membantu dan responsif!"
+      responses:
+        '201':
+          description: Review submitted successfully
+        '403':
+          description: Not authorized or case not completed
   /cases/{case_id}/messages:
     get:
       summary: Get chat messages for a case
