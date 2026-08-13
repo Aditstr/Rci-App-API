@@ -968,3 +968,323 @@ paths:
       responses:
         '200':
           description: Webhook received and processed
+
+  # ────────────────────────────────────────────────
+  # Missing Auth Endpoints
+  # ────────────────────────────────────────────────
+  /auth/google:
+    get:
+      summary: Login/Register with Google
+      description: Redirects the user to the Google OAuth consent screen. (Cannot be tested via Swagger UI - use a browser anchor tag).
+      tags:
+        - Authentication
+      security: []
+      responses:
+        '302':
+          description: Redirect to Google
+  /auth/resubmit-documents:
+    post:
+      summary: Resubmit Expert Documents
+      description: Allows a rejected lawyer or paralegal to resubmit their documents for verification.
+      tags:
+        - Authentication
+      responses:
+        '200':
+          description: OK
+
+  # ────────────────────────────────────────────────
+  # Profile Management
+  # ────────────────────────────────────────────────
+  /profile:
+    get:
+      summary: Get Profile Info
+      tags:
+        - Profile Management
+      responses:
+        '200':
+          description: OK
+    post:
+      summary: Update Basic Profile
+      tags:
+        - Profile Management
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                phone:
+                  type: string
+                avatar:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: OK
+  /profile/password:
+    put:
+      summary: Change Password
+      tags:
+        - Profile Management
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                current_password:
+                  type: string
+                password:
+                  type: string
+                password_confirmation:
+                  type: string
+      responses:
+        '200':
+          description: OK
+  /profile/avatar:
+    delete:
+      summary: Delete Avatar
+      tags:
+        - Profile Management
+      responses:
+        '200':
+          description: OK
+  /profile/expert:
+    put:
+      summary: Update Expert Profile
+      tags:
+        - Profile Management
+      responses:
+        '200':
+          description: OK
+
+  # ────────────────────────────────────────────────
+  # Wallet Info
+  # ────────────────────────────────────────────────
+  /rci/wallet:
+    get:
+      summary: Get Wallet Balance
+      tags:
+        - Payment & Wallet
+      responses:
+        '200':
+          description: OK
+  /rci/wallet/transactions:
+    get:
+      summary: Get Wallet Transactions
+      tags:
+        - Payment & Wallet
+      responses:
+        '200':
+          description: OK
+
+  # ────────────────────────────────────────────────
+  # Notifications
+  # ────────────────────────────────────────────────
+  /notifications:
+    get:
+      summary: List Notifications
+      tags:
+        - Notifications
+      responses:
+        '200':
+          description: OK
+  /notifications/unread-count:
+    get:
+      summary: Get Unread Count
+      tags:
+        - Notifications
+      responses:
+        '200':
+          description: OK
+  /notifications/{id}/read:
+    post:
+      summary: Mark Notification as Read
+      tags:
+        - Notifications
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+  /notifications/read-all:
+    post:
+      summary: Mark All as Read
+      tags:
+        - Notifications
+      responses:
+        '200':
+          description: OK
+
+  # ────────────────────────────────────────────────
+  # Client Case Actions
+  # ────────────────────────────────────────────────
+  /cases/{id}/quotation/approve:
+    post:
+      summary: Approve Quotation
+      tags:
+        - Case Management
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+  /cases/{id}/quotation/reject:
+    post:
+      summary: Reject Quotation
+      tags:
+        - Case Management
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+  /cases/{id}/confirm-completion:
+    post:
+      summary: Confirm Completion
+      tags:
+        - Case Management
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+  /cases/{id}/dispute:
+    post:
+      summary: Dispute Case
+      tags:
+        - Case Management
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+  /cases/{id}/cancel:
+    post:
+      summary: Cancel Case
+      tags:
+        - Case Management
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+
+  # ────────────────────────────────────────────────
+  # Expert Case Management
+  # ────────────────────────────────────────────────
+  /expert/cases/{id}/messages:
+    get:
+      summary: Get Expert Chat Messages
+      tags:
+        - Expert Case Management
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+    post:
+      summary: Send Expert Chat Message
+      tags:
+        - Expert Case Management
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '201':
+          description: Created
+  /expert/cases/{id}/messages/read:
+    put:
+      summary: Mark Expert Messages Read
+      tags:
+        - Expert Case Management
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+  /expert/cases/{case_id}/documents:
+    post:
+      summary: Upload Expert Case Document
+      tags:
+        - Expert Case Management
+      parameters:
+        - in: path
+          name: case_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '201':
+          description: Created
+  /expert/cases/{id}/complete:
+    post:
+      summary: Complete Case (Expert)
+      tags:
+        - Expert Case Management
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+
+  # ────────────────────────────────────────────────
+  # Paralegal Dashboard Additions
+  # ────────────────────────────────────────────────
+  /paralegal/cases/{id}/escalate:
+    post:
+      summary: Escalate Case to Lawyer
+      tags:
+        - Paralegal Dashboard
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
