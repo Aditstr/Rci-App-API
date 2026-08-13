@@ -39,6 +39,7 @@ return new class extends Migration
                 'in_progress',
                 'reviewing',
                 'escalated',
+                'awaiting_confirmation',
                 'completed',
                 'cancelled',
                 'dispute',

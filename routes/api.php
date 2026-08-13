@@ -12,6 +12,9 @@ use App\Http\Controllers\Api\VerificationController;
 use App\Http\Controllers\Api\WalletController;
 use App\Http\Controllers\Api\ChatController;
 use App\Http\Controllers\Api\XenditWebhookController;
+use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\CaseCompletionController;
+use App\Http\Controllers\Api\ReviewController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -90,6 +93,19 @@ Route::prefix('v1')->group(function () {
         ->name('verification.send');
 
     // ──────────────────────────────────────────────
+    // Profile Management (All authenticated & verified users)
+    // ──────────────────────────────────────────────
+    Route::middleware(['auth:sanctum', 'verified'])->prefix('profile')->group(function () {
+        Route::get('/',         [ProfileController::class, 'show'])->name('api.v1.profile.show');
+        Route::post('/',        [ProfileController::class, 'update'])->name('api.v1.profile.update');
+        Route::put('/password', [ProfileController::class, 'changePassword'])->name('api.v1.profile.password');
+        Route::delete('/avatar',[ProfileController::class, 'deleteAvatar'])->name('api.v1.profile.avatar.delete');
+
+        // Expert Profile (paralegal & lawyer only)
+        Route::put('/expert',   [ProfileController::class, 'updateExpertProfile'])->name('api.v1.profile.expert.update');
+    });
+
+    // ──────────────────────────────────────────────
     // RCI API — Authenticated (Sanctum) & Verified Email
     // ──────────────────────────────────────────────
     Route::middleware(['auth:sanctum', 'verified'])->prefix('rci')->group(function () {
@@ -137,6 +153,14 @@ Route::prefix('v1')->group(function () {
         Route::get('/{id}/messages', [ChatController::class, 'index'])->name('api.v1.cases.messages.index');
         Route::post('/{id}/messages', [ChatController::class, 'store'])->name('api.v1.cases.messages.store');
         Route::put('/{id}/messages/read', [ChatController::class, 'markAsRead'])->name('api.v1.cases.messages.read');
+
+        // Case Completion Flow (Client actions)
+        Route::post('/{id}/confirm-completion', [CaseCompletionController::class, 'clientConfirm'])->name('api.v1.cases.confirm_completion');
+        Route::post('/{id}/dispute',            [CaseCompletionController::class, 'clientDispute'])->name('api.v1.cases.dispute');
+        Route::post('/{id}/cancel',             [CaseCompletionController::class, 'clientCancel'])->name('api.v1.cases.cancel');
+
+        // Review & Rating
+        Route::post('/{id}/review', [ReviewController::class, 'store'])->name('api.v1.cases.review.store');
     });
 
     // ──────────────────────────────────────────────
@@ -149,6 +173,9 @@ Route::prefix('v1')->group(function () {
         
         // Document Upload
         Route::post('/{case_id}/documents', [\App\Http\Controllers\Api\CaseDocumentController::class, 'store'])->name('api.v1.expert.cases.documents.store');
+
+        // Case Completion Flow (Expert action)
+        Route::post('/{id}/complete', [CaseCompletionController::class, 'expertComplete'])->name('api.v1.expert.cases.complete');
     });
 
     // ──────────────────────────────────────────────

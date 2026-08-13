@@ -64,4 +64,46 @@ class LegalCasePolicy
     {
         return $user->id === $case->expert_id && $user->role === 'paralegal' && !in_array($case->status, ['completed', 'cancelled']);
     }
+
+    // ──────────────────────────────────────────────
+    // Completion Flow
+    // ──────────────────────────────────────────────
+
+    /**
+     * Determine whether the expert can mark the case as completed.
+     */
+    public function completeCase(User $user, LegalCase $case): bool
+    {
+        return $user->id === $case->expert_id && $case->canBeCompleted();
+    }
+
+    /**
+     * Determine whether the client can confirm case completion.
+     */
+    public function confirmCompletion(User $user, LegalCase $case): bool
+    {
+        \Illuminate\Support\Facades\Log::info('confirmCompletion policy check:', [
+            'user_id' => $user->id,
+            'case_client_id' => $case->client_id,
+            'status' => $case->status,
+            'isAwaiting' => $case->isAwaitingConfirmation()
+        ]);
+        return $user->id === $case->client_id && $case->isAwaitingConfirmation();
+    }
+
+    /**
+     * Determine whether the client can dispute the case completion.
+     */
+    public function disputeCase(User $user, LegalCase $case): bool
+    {
+        return $user->id === $case->client_id && $case->canBeDisputed();
+    }
+
+    /**
+     * Determine whether the client can cancel the case.
+     */
+    public function cancelCase(User $user, LegalCase $case): bool
+    {
+        return $user->id === $case->client_id && $case->canBeCancelled();
+    }
 }

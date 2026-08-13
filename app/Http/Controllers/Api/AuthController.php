@@ -255,9 +255,9 @@ class AuthController extends Controller
             $userData = json_encode(new UserResource($user));
             $encodedUser = base64_encode($userData);
 
-            // Redirect back to frontend
-            $frontendUrl = url('/app.html');
-            return redirect("{$frontendUrl}#google-callback?token={$token}&user={$encodedUser}");
+            // Redirect back to frontend URL defined in .env
+            $frontendUrl = env('FRONTEND_URL', 'http://localhost:3000');
+            return redirect("{$frontendUrl}/auth/google/callback?token={$token}&user={$encodedUser}");
 
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('Google Auth Error: ' . $e->getMessage());

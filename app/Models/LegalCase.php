@@ -37,6 +37,12 @@ class LegalCase extends Model
         'fee_notes',
         'fee_structure',
         'quotation_status',
+        // Completion flow
+        'completion_notes',
+        'expert_completed_at',
+        'client_confirmed_at',
+        'dispute_reason',
+        'cancellation_reason',
     ];
 
     protected function casts(): array
@@ -50,6 +56,8 @@ class LegalCase extends Model
             'completed_at' => 'datetime',
             'is_marketplace' => 'boolean',
             'proposed_fee' => 'decimal:2',
+            'expert_completed_at' => 'datetime',
+            'client_confirmed_at' => 'datetime',
         ];
     }
 
@@ -144,5 +152,44 @@ class LegalCase extends Model
             : 1;
 
         return sprintf('RCI-%s-%05d', $date, $sequence);
+    }
+
+    // ──────────────────────────────────────────────
+    // Completion Flow Helpers
+    // ──────────────────────────────────────────────
+
+    /**
+     * Check if the case is awaiting client confirmation.
+     */
+    public function isAwaitingConfirmation(): bool
+    {
+        return $this->status === 'awaiting_confirmation';
+    }
+
+    /**
+     * Check if the expert can mark this case as completed.
+     * Case must be actively worked on (in_progress, reviewing, or escalated).
+     */
+    public function canBeCompleted(): bool
+    {
+        return in_array($this->status, ['in_progress', 'reviewing', 'escalated', 'active']);
+    }
+
+    /**
+     * Check if the client can cancel this case.
+     * Only before it's actively being worked on or already finished.
+     */
+    public function canBeCancelled(): bool
+    {
+        return in_array($this->status, ['submitted', 'pending', 'assigned', 'active', 'bidding']);
+    }
+
+    /**
+     * Check if the client can dispute this case.
+     * Only when awaiting confirmation.
+     */
+    public function canBeDisputed(): bool
+    {
+        return $this->status === 'awaiting_confirmation';
     }
 }

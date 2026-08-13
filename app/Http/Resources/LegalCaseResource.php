@@ -37,6 +37,13 @@ class LegalCaseResource extends JsonResource
             'fee_structure'       => $this->fee_structure,
             'quotation_status'    => $this->quotation_status,
 
+            // Completion flow
+            'completion_notes'    => $this->completion_notes,
+            'expert_completed_at' => $this->expert_completed_at,
+            'client_confirmed_at' => $this->client_confirmed_at,
+            'dispute_reason'      => $this->when($this->status === 'dispute', $this->dispute_reason),
+            'cancellation_reason' => $this->when($this->status === 'cancelled', $this->cancellation_reason),
+
             // Timestamps
             'submitted_at'        => $this->submitted_at,
             'assigned_at'         => $this->assigned_at,
