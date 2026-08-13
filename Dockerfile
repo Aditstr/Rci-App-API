@@ -51,6 +51,7 @@ RUN apk add --no-cache \
     icu-dev \
     oniguruma-dev \
     sqlite-dev \
+    postgresql-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install \
         pdo_mysql \
@@ -65,9 +66,6 @@ RUN apk add --no-cache \
         intl \
         opcache \
     && rm -rf /var/cache/apk/*
-
-# Install PostgreSQL dev headers (needed for pdo_pgsql)
-RUN apk add --no-cache postgresql-dev
 
 # Configure PHP for production
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
