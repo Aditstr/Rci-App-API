@@ -892,3 +892,45 @@ paths:
           description: Unauthenticated
         '404':
           description: Case not found
+
+  # ────────────────────────────────────────────────
+  # Payment Gateway (Xendit)
+  # ────────────────────────────────────────────────
+  /payments:
+    get:
+      summary: List Payment Transactions (Client)
+      description: Get a list of payment transactions/invoices created via Xendit.
+      tags:
+        - Payment & Wallet
+      responses:
+        '200':
+          description: OK
+        '401':
+          description: Unauthenticated
+  /payments/{id}/status:
+    get:
+      summary: Check Payment Status
+      description: Check the live status of a specific payment invoice.
+      tags:
+        - Payment & Wallet
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+        '404':
+          description: Payment not found
+  /xendit/webhook/invoice:
+    post:
+      summary: Xendit Webhook Callback
+      description: Webhook endpoint called by Xendit when an invoice is paid or expires.
+      tags:
+        - Payment & Wallet
+      security: []
+      responses:
+        '200':
+          description: Webhook received and processed
