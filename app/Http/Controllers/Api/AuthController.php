@@ -96,31 +96,31 @@ class AuthController extends Controller
         // KTP — wajib untuk paralegal & lawyer
         if ($request->hasFile('ktp')) {
             $paths['ktp_path'] = $request->file('ktp')
-                ->store("{$basePath}/ktp", 'local');
+                ->store("{$basePath}/ktp");
         }
 
         // Ijazah — wajib untuk paralegal & lawyer
         if ($request->hasFile('ijazah')) {
             $paths['ijazah_path'] = $request->file('ijazah')
-                ->store("{$basePath}/ijazah", 'local');
+                ->store("{$basePath}/ijazah");
         }
 
         // License Card (PERADI) — wajib untuk lawyer
         if ($request->hasFile('license_card')) {
             $paths['license_card_path'] = $request->file('license_card')
-                ->store("{$basePath}/license", 'local');
+                ->store("{$basePath}/license");
         }
 
         // Selfie — wajib untuk lawyer
         if ($request->hasFile('selfie')) {
             $paths['selfie_path'] = $request->file('selfie')
-                ->store("{$basePath}/selfie", 'local');
+                ->store("{$basePath}/selfie");
         }
 
         // CV — opsional untuk lawyer
         if ($request->hasFile('cv')) {
             $paths['cv_path'] = $request->file('cv')
-                ->store("{$basePath}/cv", 'local');
+                ->store("{$basePath}/cv");
         }
 
         return $paths;
@@ -360,19 +360,19 @@ class AuthController extends Controller
 
         // Store new files first (AUTH-10)
         if ($request->hasFile('ktp')) {
-            $updateData['ktp_path'] = $request->file('ktp')->store("{$basePath}/ktp", 'local');
+            $updateData['ktp_path'] = $request->file('ktp')->store("{$basePath}/ktp");
         }
         if ($request->hasFile('ijazah')) {
-            $updateData['ijazah_path'] = $request->file('ijazah')->store("{$basePath}/ijazah", 'local');
+            $updateData['ijazah_path'] = $request->file('ijazah')->store("{$basePath}/ijazah");
         }
         if ($request->hasFile('license_card')) {
-            $updateData['license_card_path'] = $request->file('license_card')->store("{$basePath}/license", 'local');
+            $updateData['license_card_path'] = $request->file('license_card')->store("{$basePath}/license");
         }
         if ($request->hasFile('selfie')) {
-            $updateData['selfie_path'] = $request->file('selfie')->store("{$basePath}/selfie", 'local');
+            $updateData['selfie_path'] = $request->file('selfie')->store("{$basePath}/selfie");
         }
         if ($request->hasFile('cv')) {
-            $updateData['cv_path'] = $request->file('cv')->store("{$basePath}/cv", 'local');
+            $updateData['cv_path'] = $request->file('cv')->store("{$basePath}/cv");
         }
 
         // Old paths to delete after success
