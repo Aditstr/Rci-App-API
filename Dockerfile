@@ -83,6 +83,12 @@ COPY . .
 # Copy built frontend assets
 COPY --from=frontend /app/public/build ./public/build
 
+# Regenerate autoloader inside the production PHP container
+# This fixes platform_check.php to match the actual PHP version (8.3)
+COPY --from=composer /usr/bin/composer /usr/bin/composer
+RUN composer dump-autoload --optimize --no-dev --ignore-platform-reqs \
+    && rm /usr/bin/composer
+
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/storage \
