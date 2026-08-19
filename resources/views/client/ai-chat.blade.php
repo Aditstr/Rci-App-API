@@ -129,15 +129,32 @@ async function sendMessage() {
     addTyping();
 
     try {
-        const res = await fetch('/api/v1/rci/chat', {
+        const headers = { 'Accept': 'application/json', 'Content-Type': 'application/json' };
+        if (token) {
+            headers['Authorization'] = 'Bearer ' + token;
+        }
+
+        let res = await fetch('/api/v1/rci/chat', {
             method: 'POST',
-            headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json', 'Content-Type': 'application/json' },
+            headers: headers,
             body: JSON.stringify({ message: text })
         });
+
+        // Fallback to freemium endpoint if 401 unauthenticated or missing token
+        if (res.status === 401 || res.status === 404) {
+            res = await fetch('/api/chat/send', {
+                method: 'POST',
+                headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: text })
+            });
+        }
+
         const data = await res.json();
         document.getElementById('typing-indicator')?.remove();
         if (!res.ok) throw new Error(data.message || 'AI tidak merespons');
-        addMessage(data.reply || data.message || data.response || 'Maaf, tidak ada respons.', 'ai');
+
+        const aiAnswer = data.data?.answer || data.answer || data.reply || data.response || (typeof data.message === 'string' && !data.success ? data.message : null) || 'Maaf, tidak ada respons.';
+        addMessage(aiAnswer, 'ai');
     } catch(err) {
         document.getElementById('typing-indicator')?.remove();
         addMessage('⚠️ ' + err.message, 'ai');

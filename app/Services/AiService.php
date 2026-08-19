@@ -213,19 +213,23 @@ PROMPT;
         
         $retrievedDocsText = '';
         if (count($keywords) > 0) {
-            $query = \App\Models\LegalDocument::query();
-            foreach ($keywords as $word) {
-                $escapedWord = str_replace(['%', '_', '\\'], ['\\%', '\\_', '\\\\'], $word);
-                $query->orWhere('keywords', 'LIKE', '%' . $escapedWord . '%')
-                      ->orWhere('title', 'LIKE', '%' . $escapedWord . '%');
-            }
-            $docs = $query->limit(3)->get();
-            
-            if ($docs->count() > 0) {
-                $retrievedDocsText = "\n\nREFERENSI HUKUM MUTLAK (JANGAN MENGARANG PASAL SELAIN REFERENSI BERIKUT):\n";
-                foreach ($docs as $doc) {
-                    $retrievedDocsText .= "- {$doc->title}: {$doc->content}\n";
+            try {
+                $query = \App\Models\LegalDocument::query();
+                foreach ($keywords as $word) {
+                    $escapedWord = str_replace(['%', '_', '\\'], ['\\%', '\\_', '\\\\'], $word);
+                    $query->orWhere('keywords', 'LIKE', '%' . $escapedWord . '%')
+                          ->orWhere('title', 'LIKE', '%' . $escapedWord . '%');
                 }
+                $docs = $query->limit(3)->get();
+                
+                if ($docs->count() > 0) {
+                    $retrievedDocsText = "\n\nREFERENSI HUKUM MUTLAK (JANGAN MENGARANG PASAL SELAIN REFERENSI BERIKUT):\n";
+                    foreach ($docs as $doc) {
+                        $retrievedDocsText .= "- {$doc->title}: {$doc->content}\n";
+                    }
+                }
+            } catch (\Throwable $e) {
+                Log::warning('LegalDocument RAG lookup skipped: ' . $e->getMessage());
             }
         }
 
