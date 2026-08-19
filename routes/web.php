@@ -4,12 +4,37 @@ use Illuminate\Support\Facades\Route;
 use App\Models\ExpertProfile;
 use Illuminate\Support\Facades\Storage;
 
-Route::get('/', function () {
-    return view('welcome');
+// ─── Public ───────────────────────────────────────────
+Route::get('/', fn() => view('welcome'));
+Route::get('/api-docs', fn() => view('api-docs'));
+
+// ─── Auth Pages ───────────────────────────────────────
+Route::get('/login',    fn() => view('auth.login'));
+Route::get('/register', fn() => view('auth.register'));
+
+// ─── Client Dashboard ─────────────────────────────────
+Route::prefix('client')->group(function () {
+    Route::get('/',            fn() => view('client.dashboard'));
+    Route::get('/ai-chat',     fn() => view('client.ai-chat'));
+    Route::get('/cases',       fn() => view('client.cases'));
+    Route::get('/cases/new',   fn() => view('client.case-new'));
+    Route::get('/cases/{id}',  fn() => view('client.case-detail'));
+    Route::get('/wallet',      fn() => view('client.wallet'));
+    Route::get('/notifications', fn() => view('client.notifications'));
 });
 
-Route::get('/api-docs', function () {
-    return view('api-docs');
+// ─── Paralegal Workspace ──────────────────────────────
+Route::prefix('paralegal')->group(function () {
+    Route::get('/',             fn() => view('paralegal.dashboard'));
+    Route::get('/kanban',       fn() => view('paralegal.dashboard'));
+    Route::get('/marketplace',  fn() => view('paralegal.marketplace'));
+});
+
+// ─── Lawyer Dashboard ─────────────────────────────────
+Route::prefix('lawyer')->group(function () {
+    Route::get('/',         fn() => view('lawyer.dashboard'));
+    Route::get('/cases',    fn() => view('lawyer.dashboard'));
+    Route::get('/revenue',  fn() => view('lawyer.dashboard'));
 });
 
 Route::get('/swagger.yaml', function () {
