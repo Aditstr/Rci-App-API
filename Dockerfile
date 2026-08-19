@@ -8,9 +8,12 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 
+# Copy all source files so Tailwind @source directives can scan blade views
 COPY vite.config.js ./
 COPY resources ./resources
 COPY public ./public
+# Copy views for Tailwind v4 class scanning
+COPY . .
 RUN npm run build
 
 # ============================================

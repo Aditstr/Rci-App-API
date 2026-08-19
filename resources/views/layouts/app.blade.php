@@ -6,7 +6,8 @@
     <meta name="description" content="@yield('meta_description', 'RCI — Roys Counsel Indonesia. Platform konsultasi hukum cerdas dengan AI, Paralegal, dan Pengacara profesional.')">
     <title>@yield('title', 'RCI — Roys Counsel Indonesia')</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    {{-- CSS: static file committed to git, always available in production --}}
+    <link rel="stylesheet" href="/css/caldera.css">
     @stack('head')
 </head>
 <body>

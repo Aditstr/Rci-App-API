@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Masuk — RCI</title>
-    @vite(['resources/css/app.css'])
+    <link rel="stylesheet" href="/css/caldera.css">
 </head>
 <body>
 <div class="auth-container">
@@ -62,7 +62,7 @@
     </div>
 </div>
 
-@vite(['resources/js/app.js'])
+
 <script>
 function togglePwd(id, btn) {
     const input = document.getElementById(id);
