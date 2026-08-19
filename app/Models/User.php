@@ -172,9 +172,17 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser
      */
     public function hasActiveSubscription(): bool
     {
-        return $this->subscriptions()
-            ->where('status', 'active')
-            ->where('ends_at', '>', now())
-            ->exists();
+        if (in_array($this->role ?? '', ['corporate', 'lawyer'])) {
+            return true;
+        }
+
+        try {
+            return $this->subscriptions()
+                ->where('status', 'active')
+                ->where('ends_at', '>', now())
+                ->exists();
+        } catch (\Throwable $e) {
+            return false;
+        }
     }
 }

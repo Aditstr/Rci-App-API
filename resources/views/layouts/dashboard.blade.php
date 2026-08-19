@@ -67,9 +67,9 @@
 
 @stack('scripts')
 <script>
-    // Load user info
+(function() {
     const token = localStorage.getItem('rci_token');
-    if (!token) { window.location.href = '/login'; }
+    if (!token) { window.location.href = '/login'; return; }
 
     fetch('/api/v1/auth/me', {
         headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' }
@@ -78,35 +78,41 @@
         return r.json();
     }).then(d => {
         const u = d.user || d;
-        document.getElementById('sidebar-name').textContent = u.name || 'Pengguna';
-        document.getElementById('sidebar-role').textContent = u.role || '—';
-        document.getElementById('sidebar-avatar').textContent = (u.name || 'U')[0].toUpperCase();
+        const nameEl = document.getElementById('sidebar-name');
+        const roleEl = document.getElementById('sidebar-role');
+        const avatarEl = document.getElementById('sidebar-avatar');
+        if (nameEl) nameEl.textContent = u.name || 'Pengguna';
+        if (roleEl) roleEl.textContent = u.role || '—';
+        if (avatarEl) avatarEl.textContent = (u.name || 'U')[0].toUpperCase();
         if (window.onUserLoaded) window.onUserLoaded(u);
     }).catch(() => { window.location.href = '/login'; });
+})();
 
-    function doLogout() {
-        fetch('/api/v1/auth/logout', {
-            method: 'POST',
-            headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' }
-        }).finally(() => { localStorage.removeItem('rci_token'); window.location.href = '/login'; });
-    }
+function doLogout() {
+    const token = localStorage.getItem('rci_token');
+    fetch('/api/v1/auth/logout', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' }
+    }).finally(() => { localStorage.removeItem('rci_token'); window.location.href = '/login'; });
+}
 
-    function toggleMobileSidebar() {
-        const sidebar = document.getElementById('sidebar');
-        const backdrop = document.getElementById('sidebar-backdrop');
-        sidebar.classList.toggle('open');
-        backdrop.classList.toggle('visible');
-    }
-    window.toggleMobileSidebar = toggleMobileSidebar;
+function toggleMobileSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const backdrop = document.getElementById('sidebar-backdrop');
+    if (sidebar) sidebar.classList.toggle('open');
+    if (backdrop) backdrop.classList.toggle('visible');
+}
+window.toggleMobileSidebar = toggleMobileSidebar;
 
-    function showToast(msg, type = 'info') {
-        const t = document.getElementById('toast');
-        t.textContent = msg;
-        t.style.backgroundColor = type === 'error' ? '#fc5000' : '#070607';
-        t.classList.add('show');
-        setTimeout(() => t.classList.remove('show'), 3000);
-    }
-    window.showToast = showToast;
+function showToast(msg, type = 'info') {
+    const t = document.getElementById('toast');
+    if (!t) return;
+    t.textContent = msg;
+    t.style.backgroundColor = type === 'error' ? '#fc5000' : '#070607';
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+}
+window.showToast = showToast;
 </script>
 </body>
 </html>
