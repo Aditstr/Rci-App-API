@@ -11,6 +11,8 @@ Route::get('/api-docs', fn() => view('api-docs'));
 // ─── Auth Pages ───────────────────────────────────────
 Route::get('/login',    fn() => view('auth.login'));
 Route::get('/register', fn() => view('auth.register'));
+// Halaman ini menerima #token=xxx dari redirect Google OAuth di AuthController
+Route::get('/auth/google/callback', fn() => view('auth.google-callback'));
 
 // ─── Client Dashboard ─────────────────────────────────
 Route::prefix('client')->group(function () {

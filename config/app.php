@@ -54,6 +54,10 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
+    // URL frontend — jika berbeda server dari API, set env FRONTEND_URL
+    // Defaultnya sama dengan APP_URL (frontend dan API di server yang sama)
+    'frontend_url' => env('FRONTEND_URL', env('APP_URL', 'http://localhost')),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone

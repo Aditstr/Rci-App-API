@@ -254,13 +254,13 @@ class AuthController extends Controller
             $token = $user->createToken('auth-token')->plainTextToken;
             // Removed encoding of user data in URL as the frontend fetches it via /auth/me
 
-            // Redirect back to frontend URL defined in .env
-            $frontendUrl = env('FRONTEND_URL', 'http://localhost:3000');
+            // Redirect back to frontend — gunakan FRONTEND_URL atau fallback ke APP_URL (server ini)
+            $frontendUrl = config('app.frontend_url', config('app.url'));
             return redirect("{$frontendUrl}/auth/google/callback#token={$token}");
 
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('Google Auth Error: ' . $e->getMessage());
-            $frontendUrl = env('FRONTEND_URL', 'http://localhost:3000');
+            $frontendUrl = config('app.frontend_url', config('app.url'));
             return redirect("{$frontendUrl}/auth/google/callback#error=google_auth_failed");
         }
     }
