@@ -9,14 +9,22 @@
     @stack('head')
 </head>
 <body>
+<!-- ── Mobile Backdrop & Topbar ── -->
+<div class="sidebar-backdrop" id="sidebar-backdrop" onclick="toggleMobileSidebar()"></div>
+
 <div class="dashboard-layout">
 
     <!-- ── Sidebar ── -->
     <aside class="sidebar" id="sidebar">
-        <a href="/" class="sidebar-logo">
-            <div class="nav-logo-icon">R</div>
-            <span class="font-display" style="font-size:20px; color:var(--color-obsidian); letter-spacing:0.02em;">RCI</span>
-        </a>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: var(--spacing-32);">
+            <a href="/" class="sidebar-logo" style="margin-bottom:0;">
+                <div class="nav-logo-icon">R</div>
+                <span class="font-display" style="font-size:20px; color:var(--color-obsidian); letter-spacing:0.02em;">RCI</span>
+            </a>
+            <button class="sidebar-toggle show-mobile" onclick="toggleMobileSidebar()" aria-label="Tutup menu">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
 
         @yield('sidebar-nav')
 
@@ -38,6 +46,18 @@
 
     <!-- ── Main Content ── -->
     <main class="dashboard-main">
+        <!-- Mobile Topbar -->
+        <div class="dashboard-topbar">
+            <button class="sidebar-toggle" onclick="toggleMobileSidebar()" aria-label="Buka menu">
+                <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            </button>
+            <a href="/" style="display:flex; align-items:center; gap:8px; text-decoration:none;">
+                <div class="nav-logo-icon" style="width:32px;height:32px;font-size:16px;">R</div>
+                <span class="font-display" style="font-size:18px; color:var(--color-obsidian);">RCI</span>
+            </a>
+            <div style="width:40px;"></div> <!-- spacer -->
+        </div>
+
         @yield('content')
     </main>
 </div>
@@ -70,6 +90,14 @@
             headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' }
         }).finally(() => { localStorage.removeItem('rci_token'); window.location.href = '/login'; });
     }
+
+    function toggleMobileSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const backdrop = document.getElementById('sidebar-backdrop');
+        sidebar.classList.toggle('open');
+        backdrop.classList.toggle('visible');
+    }
+    window.toggleMobileSidebar = toggleMobileSidebar;
 
     function showToast(msg, type = 'info') {
         const t = document.getElementById('toast');

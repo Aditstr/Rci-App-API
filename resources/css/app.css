@@ -979,3 +979,405 @@ body {
 .opacity-70 {
   opacity: 0.7;
 }
+
+/* ══════════════════════════════════════════════════════════════
+   RESPONSIVE SYSTEM — Caldera Mobile First
+   breakpoints: sm=480 | md=768 | lg=1024 | xl=1280
+══════════════════════════════════════════════════════════════ */
+
+/* ── Navigation: mobile dropdown ── */
+@media (max-width: 768px) {
+  .nav-bar {
+    position: relative;
+  }
+
+  .nav-inner {
+    flex-wrap: wrap;
+    gap: 0;
+    padding: 12px 20px;
+  }
+
+  .nav-links {
+    display: none;
+    width: 100%;
+    flex-direction: column;
+    background: var(--color-limestone);
+    border-radius: var(--radius-medium);
+    margin-top: 12px;
+    padding: 8px;
+    gap: 2px;
+    order: 99;
+  }
+
+  .nav-links.open {
+    display: flex;
+  }
+
+  .nav-links li,
+  .nav-links div.nav-divider {
+    display: none;
+  }
+
+  .nav-links li {
+    display: block;
+  }
+
+  .nav-links .nav-link {
+    display: block;
+    padding: 12px 16px;
+    border-radius: var(--radius-medium);
+    transition: background 0.15s;
+  }
+
+  .nav-links .nav-link:hover {
+    background: var(--color-pumice);
+  }
+
+  .nav-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .nav-actions .btn-primary,
+  .nav-actions .btn-ghost {
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+
+  .mobile-nav-toggle {
+    display: flex;
+    align-items: center;
+  }
+}
+
+/* ── Dashboard: mobile sidebar drawer ── */
+@media (max-width: 1024px) {
+  /* Sidebar becomes a slide-in drawer */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 280px;
+    z-index: 200;
+    transform: translateX(-100%);
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 4px 0 32px rgba(7,6,7,0.12);
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  /* Backdrop overlay */
+  .sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(7,6,7,0.4);
+    z-index: 199;
+  }
+
+  .sidebar-backdrop.visible {
+    display: block;
+  }
+
+  /* Dashboard main takes full width */
+  .dashboard-layout {
+    flex-direction: column;
+  }
+
+  .dashboard-main {
+    padding: 16px;
+    width: 100%;
+  }
+
+  /* Mobile top bar for dashboard */
+  .dashboard-topbar {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: var(--color-limestone);
+    border-bottom: 1.5px dotted var(--color-pumice);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  /* Hamburger toggle for sidebar */
+  .sidebar-toggle {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: var(--color-pumice);
+    border: none;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .sidebar-toggle:hover {
+    background: var(--color-obsidian);
+    color: white;
+  }
+}
+
+/* Desktop: hide mobile UI elements */
+@media (min-width: 1025px) {
+  .dashboard-topbar {
+    display: none !important;
+  }
+
+  .sidebar-toggle {
+    display: none !important;
+  }
+
+  .sidebar-backdrop {
+    display: none !important;
+  }
+}
+
+/* ── Dashboard main: responsive padding ── */
+@media (max-width: 768px) {
+  .dashboard-main {
+    padding: 16px;
+  }
+
+  /* Stack 2-col grids on mobile */
+  [style*="grid-template-columns: 2fr 1fr"],
+  [style*="grid-template-columns: 1fr 1fr"],
+  [style*="grid-template-columns: 3fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Stack flex rows that should stack */
+  .mobile-stack {
+    flex-direction: column !important;
+  }
+}
+
+/* ── Cards: reduce padding on mobile ── */
+@media (max-width: 640px) {
+  .card {
+    padding: 20px 16px;
+    border-radius: 24px;
+  }
+
+  .stat-card {
+    padding: 20px 16px;
+  }
+
+  .auth-card {
+    padding: 24px 20px;
+  }
+
+  .auth-container {
+    padding: 16px;
+    align-items: flex-start;
+  }
+}
+
+/* ── Typography: fluid scale on mobile ── */
+@media (max-width: 640px) {
+  .text-heading-lg,
+  [class*="text-heading-lg"] {
+    font-size: clamp(40px, 12vw, 80px) !important;
+  }
+
+  .text-heading {
+    font-size: clamp(22px, 6vw, 40px);
+  }
+
+  /* Large font-size inline styles: override hero */
+  .hero-section h1 {
+    font-size: clamp(48px, 14vw, 120px);
+  }
+}
+
+/* ── Footer: mobile stack ── */
+@media (max-width: 768px) {
+  footer [style*="grid-template-columns: 2fr 1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+    gap: 32px !important;
+  }
+
+  footer [style*="display:flex; align-items:center; justify-content:space-between"] {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+  }
+}
+
+/* ── Buttons: full-width on small screens ── */
+@media (max-width: 480px) {
+  .btn-cta-group {
+    flex-direction: column !important;
+    width: 100%;
+  }
+
+  .btn-cta-group .btn-primary,
+  .btn-cta-group .btn-secondary {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
+  }
+}
+
+/* ── Chat: mobile adjustments ── */
+@media (max-width: 768px) {
+  .chat-container {
+    height: calc(100dvh - 180px);
+    border-radius: 24px;
+  }
+
+  .chat-message {
+    max-width: 90%;
+  }
+
+  .chat-input-bar {
+    padding: 12px;
+    gap: 8px;
+  }
+}
+
+/* ── Kanban: horizontal scroll on mobile ── */
+@media (max-width: 900px) {
+  .kanban-board {
+    display: flex;
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 12px;
+    padding-bottom: 8px;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .kanban-column {
+    min-width: 280px;
+    flex-shrink: 0;
+    scroll-snap-align: start;
+  }
+}
+
+/* ── Hero section: mobile ── */
+@media (max-width: 768px) {
+  .hero-section {
+    padding: 48px 0;
+  }
+
+  .hero-grid {
+    gap: 24px;
+  }
+
+  /* Hide hero right column decorative block on mobile */
+  .hero-grid > :last-child {
+    display: none;
+  }
+}
+
+/* ── Page container: mobile padding ── */
+@media (max-width: 768px) {
+  .page-container {
+    padding: 0 16px;
+  }
+}
+
+/* ── Toast: full-width on mobile ── */
+@media (max-width: 480px) {
+  .toast {
+    bottom: 16px;
+    right: 16px;
+    left: 16px;
+    max-width: none;
+    text-align: center;
+  }
+}
+
+/* ── Tables: horizontal scroll wrapper ── */
+@media (max-width: 640px) {
+  .table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .table-scroll table {
+    min-width: 560px;
+  }
+}
+
+/* ── Wallet top-up modal: full screen on mobile ── */
+@media (max-width: 480px) {
+  #topup-modal .card {
+    border-radius: 24px 24px 0 0;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: 0;
+    max-width: none;
+    border: none;
+  }
+
+  #topup-modal {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+}
+
+/* ── Utility: hide on mobile ── */
+.hide-mobile {
+  display: block;
+}
+
+@media (max-width: 768px) {
+  .hide-mobile {
+    display: none !important;
+  }
+}
+
+/* ── Utility: show only on mobile ── */
+.show-mobile {
+  display: none !important;
+}
+
+@media (max-width: 768px) {
+  .show-mobile {
+    display: block !important;
+  }
+}
+
+/* ── Touch-friendly tap targets ── */
+@media (pointer: coarse) {
+  .btn-primary,
+  .btn-secondary,
+  .btn-ghost {
+    min-height: 48px;
+  }
+
+  .sidebar-nav-item {
+    min-height: 48px;
+  }
+
+  .input-field {
+    min-height: 52px;
+    font-size: 16px; /* Prevent iOS zoom on focus */
+  }
+}
+
+/* ── Safe area insets for notched phones ── */
+@supports (padding: max(0px)) {
+  .dashboard-main {
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+  }
+
+  .chat-input-bar {
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+  }
+
+  .toast {
+    bottom: max(16px, env(safe-area-inset-bottom));
+  }
+}
