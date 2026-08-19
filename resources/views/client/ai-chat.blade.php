@@ -83,10 +83,40 @@
 @push('scripts')
 <script>
 const token = localStorage.getItem('rci_token');
+const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 const msgContainer = document.getElementById('chat-messages');
 let isLoading = false;
 
-function addMessage(text, role, time) {
+const HISTORY_KEY = 'rci_chat_history';
+
+function loadHistory() {
+    try {
+        const saved = localStorage.getItem(HISTORY_KEY);
+        if (!saved) return;
+        const messages = JSON.parse(saved);
+        if (Array.isArray(messages) && messages.length > 0) {
+            msgContainer.innerHTML = '';
+            messages.forEach(m => {
+                addMessage(m.text, m.role, m.time, false);
+            });
+        }
+    } catch(e) {
+        console.error('Failed to load chat history', e);
+    }
+}
+
+function saveMessage(text, role, timeStr) {
+    try {
+        let history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+        history.push({ text, role, time: timeStr });
+        if (history.length > 50) history = history.slice(-50);
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+    } catch(e) {
+        console.error('Failed to save chat message', e);
+    }
+}
+
+function addMessage(text, role, time, persist = true) {
     const timeStr = time || new Date().toLocaleTimeString('id-ID', {hour:'2-digit',minute:'2-digit'});
     const isUser = role === 'user';
     const div = document.createElement('div');
@@ -96,6 +126,10 @@ function addMessage(text, role, time) {
         <p style="font-size:11px; margin-top:6px; opacity:0.5; text-align:${isUser?'right':'left'}">${timeStr}</p>`;
     msgContainer.appendChild(div);
     msgContainer.scrollTop = msgContainer.scrollHeight;
+
+    if (persist) {
+        saveMessage(text, role, timeStr);
+    }
     return div;
 }
 
@@ -129,10 +163,13 @@ async function sendMessage() {
     addTyping();
 
     try {
-        const headers = { 'Accept': 'application/json', 'Content-Type': 'application/json' };
-        if (token) {
-            headers['Authorization'] = 'Bearer ' + token;
-        }
+        const headers = {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        };
+        if (csrfToken) headers['X-CSRF-TOKEN'] = csrfToken;
+        if (token) headers['Authorization'] = 'Bearer ' + token;
 
         let res = await fetch('/api/v1/rci/chat', {
             method: 'POST',
@@ -140,11 +177,11 @@ async function sendMessage() {
             body: JSON.stringify({ message: text })
         });
 
-        // Fallback to freemium endpoint if 401 unauthenticated or missing token
+        // Fallback to freemium endpoint (/api/v1/chat/send) if 401 unauthenticated or 404
         if (res.status === 401 || res.status === 404) {
-            res = await fetch('/api/chat/send', {
+            res = await fetch('/api/v1/chat/send', {
                 method: 'POST',
-                headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+                headers: headers,
                 body: JSON.stringify({ message: text })
             });
         }
@@ -157,7 +194,7 @@ async function sendMessage() {
         addMessage(aiAnswer, 'ai');
     } catch(err) {
         document.getElementById('typing-indicator')?.remove();
-        addMessage('⚠️ ' + err.message, 'ai');
+        addMessage('⚠️ ' + err.message, 'ai', null, false);
     }
 
     isLoading = false;
@@ -171,10 +208,24 @@ function sendSuggestion(text) {
 }
 
 function clearChat() {
-    const msgs = msgContainer.querySelectorAll('.chat-message');
-    msgs.forEach(m => m.remove());
-    addMessage('💬 Riwayat percakapan telah dihapus. Mulai sesi konsultasi baru.', 'ai');
+    localStorage.removeItem(HISTORY_KEY);
+    msgContainer.innerHTML = `
+        <div class="chat-message chat-message-ai" style="max-width:85%;">
+            <p style="font-size:15px; margin-bottom:4px;">👋 Halo! Saya adalah AI Legal RCI, asisten hukum Anda.</p>
+            <p style="font-size:14px; line-height:1.6; color:rgba(7,6,7,0.7);">Saya siap membantu Anda memahami hak-hak hukum dan memberi analisis awal atas situasi hukum Anda. Apa yang ingin Anda konsultasikan hari ini?</p>
+            <p style="font-size:11px; color:rgba(7,6,7,0.35); margin-top:8px;">💬 Riwayat percakapan telah dibersihkan.</p>
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; padding:4px 0;">
+            <button onclick="sendSuggestion(this.textContent)" class="tag" style="cursor:pointer; border:none; font-size:13px; padding:6px 14px; transition:opacity 0.15s;" onmouseover="this.style.opacity=0.7" onmouseout="this.style.opacity=1">Hak saya sebagai konsumen?</button>
+            <button onclick="sendSuggestion(this.textContent)" class="tag" style="cursor:pointer; border:none; font-size:13px; padding:6px 14px; transition:opacity 0.15s;" onmouseover="this.style.opacity=0.7" onmouseout="this.style.opacity=1">Cara lapor PHK tidak adil?</button>
+            <button onclick="sendSuggestion(this.textContent)" class="tag" style="cursor:pointer; border:none; font-size:13px; padding:6px 14px; transition:opacity 0.15s;" onmouseover="this.style.opacity=0.7" onmouseout="this.style.opacity=1">Prosedur gugatan perdata?</button>
+            <button onclick="sendSuggestion(this.textContent)" class="tag" style="cursor:pointer; border:none; font-size:13px; padding:6px 14px; transition:opacity 0.15s;" onmouseover="this.style.opacity=0.7" onmouseout="this.style.opacity=1">Hak anak dalam perceraian?</button>
+        </div>`;
 }
+
+// Load history on initial page load
+document.addEventListener('DOMContentLoaded', loadHistory);
+loadHistory();
 
 // Auto-resize textarea
 document.getElementById('chat-input').addEventListener('input', function() {

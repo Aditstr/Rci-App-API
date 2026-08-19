@@ -243,7 +243,7 @@ PROMPT;
 
             if ($apiKey) {
                 $response = Http::withToken($apiKey)
-                    ->timeout(30)
+                    ->timeout(15)
                     ->withHeaders([
                         'HTTP-Referer' => config('app.url'),
                         'X-Title' => config('app.name'),
@@ -257,25 +257,26 @@ PROMPT;
                         'temperature' => 0.5,
                     ]);
 
-                if ($response->successful()) {
+                $content = $response->json('choices.0.message.content');
+
+                if ($response->successful() && !empty($content)) {
                     return [
-                        'answer'        => $response->json('choices.0.message.content'),
+                        'answer'        => trim($content),
                         'topic'         => $topic,
                         'confidence'    => $isPro ? 0.95 : 0.65, // Pro lebih yakin
                         'disclaimer'    => $isPro 
                             ? 'Analisis berdasarkan hukum positif Indonesia. Konsultasikan dengan Advokat.' 
                             : 'Jawaban bersifat umum. Hubungi Paralegal kami untuk langkah teknis.',
                     ];
-                } else {
-                    Log::error('OpenRouter API Error: ' . $response->body());
                 }
+
+                Log::error('OpenRouter API Error: ' . $response->status() . ' - ' . $response->body());
             }
-        } catch (\Exception $e) {
-            // Kalau API Error, diam saja dan lanjut ke kodingan lama lu (Fallback)
-            Log::error("AI Error: " . $e->getMessage());
+        } catch (\Throwable $e) {
+            Log::error("AI Exception: " . $e->getMessage());
         }
 
-        // 4. --- FALLBACK KE KODINGAN LAMA LU (Jaga-jaga kalau internet mati) ---
+        // Fallback jika OpenRouter error/timeout
         if ($isPro) {
             return $this->buildProResponse($message, $topic);
         }
