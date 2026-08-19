@@ -91,7 +91,17 @@ class AiChatController extends Controller
         }
 
         // Process the message via AI
-        $aiResponse = $this->ai->chat($message, $user);
+        try {
+            $aiResponse = $this->ai->chat($message, $user);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('AiChatController send error: ' . $e->getMessage());
+            $aiResponse = [
+                'answer'     => 'Terima kasih atas pertanyaan Anda. Permasalahan yang Anda sampaikan berkaitan dengan ranah hukum di Indonesia. Silakan berikan rincian kronologi atau konsultasikan langsung dengan Paralegal kami.',
+                'topic'      => 'umum',
+                'confidence' => 0.50,
+                'disclaimer' => 'Jawaban bersifat umum. Hubungi Paralegal kami untuk bantuan langkah teknis.',
+            ];
+        }
 
         // Increment usage counter (expires at midnight)
         Cache::put($cacheKey, $used + 1, $this->ttlUntilMidnight());

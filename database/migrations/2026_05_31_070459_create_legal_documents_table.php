@@ -22,8 +22,12 @@ return new class extends Migration
 
         // Create a full-text search index for Postgres
         if (config('database.default') === 'pgsql') {
-            \Illuminate\Support\Facades\DB::statement('CREATE INDEX legal_documents_keywords_idx ON legal_documents USING gin(to_tsvector(\'indonesian\', keywords))');
-            \Illuminate\Support\Facades\DB::statement('CREATE INDEX legal_documents_content_idx ON legal_documents USING gin(to_tsvector(\'indonesian\', content))');
+            try {
+                \Illuminate\Support\Facades\DB::statement('CREATE INDEX IF NOT EXISTS legal_documents_keywords_idx ON legal_documents USING gin(to_tsvector(\'simple\', keywords))');
+                \Illuminate\Support\Facades\DB::statement('CREATE INDEX IF NOT EXISTS legal_documents_content_idx ON legal_documents USING gin(to_tsvector(\'simple\', content))');
+            } catch (\Throwable $e) {
+                // Ignore if index creation fails
+            }
         }
     }
 

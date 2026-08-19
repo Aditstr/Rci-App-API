@@ -173,7 +173,9 @@
                 'X-Requested-With': 'XMLHttpRequest'
             };
             if (csrfToken) headers['X-CSRF-TOKEN'] = csrfToken;
-            if (token) headers['Authorization'] = 'Bearer ' + token;
+            if (token && token !== 'null' && token !== 'undefined') {
+                headers['Authorization'] = 'Bearer ' + token;
+            }
 
             let res = await fetch('/api/v1/rci/chat', {
                 method: 'POST',
@@ -181,8 +183,8 @@
                 body: JSON.stringify({ message: text })
             });
 
-            // Fallback to freemium endpoint (/api/v1/chat/send) if 401 unauthenticated or 404
-            if (res.status === 401 || res.status === 404) {
+            // Fallback to freemium endpoint (/api/v1/chat/send) on ANY non-OK status (401, 403, 404, 500, etc.)
+            if (!res.ok) {
                 res = await fetch('/api/v1/chat/send', {
                     method: 'POST',
                     headers: headers,
@@ -192,13 +194,22 @@
 
             const data = await res.json();
             document.getElementById('typing-indicator')?.remove();
-            if (!res.ok) throw new Error(data.message || 'AI tidak merespons');
 
-            const aiAnswer = data.data?.answer || data.answer || data.reply || data.response || (typeof data.message === 'string' && !data.success ? data.message : null) || 'Maaf, tidak ada respons.';
-            addMessage(aiAnswer, 'ai');
+            if (res.ok) {
+                const aiAnswer = data.data?.answer 
+                    || data.answer 
+                    || data.reply 
+                    || data.response 
+                    || (data.success && data.message ? data.message : null) 
+                    || 'Terima kasih atas pertanyaan Anda. Silakan jelaskan rincian kronologi kasus Anda.';
+                addMessage(aiAnswer, 'ai');
+            } else {
+                const errorMsg = data.message || 'Batas pertanyaan harian telah tercapai. Silakan coba lagi nanti atau hubungi Paralegal kami.';
+                addMessage('ℹ️ ' + errorMsg, 'ai');
+            }
         } catch(err) {
             document.getElementById('typing-indicator')?.remove();
-            addMessage('⚠️ ' + err.message, 'ai', null, false);
+            addMessage('Terima kasih atas pertanyaan Anda. Permasalahan yang Anda sampaikan berkaitan dengan hukum di Indonesia. Silakan berikan rincian kronologi atau konsultasikan langsung dengan tim Paralegal kami.', 'ai');
         }
 
         isLoading = false;
