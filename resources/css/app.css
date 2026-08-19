@@ -985,68 +985,99 @@ body {
    breakpoints: sm=480 | md=768 | lg=1024 | xl=1280
 ══════════════════════════════════════════════════════════════ */
 
-/* ── Navigation: mobile dropdown ── */
+/* ── Navigation: mobile clean navbar ── */
 @media (max-width: 768px) {
   .nav-bar {
-    position: relative;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    padding: 12px 16px;
   }
 
   .nav-inner {
-    flex-wrap: wrap;
-    gap: 0;
-    padding: 12px 20px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 16px;
+    border-radius: var(--radius-pills);
+  }
+
+  .nav-logo-text {
+    font-size: 18px;
+  }
+
+  .nav-logo-icon {
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+  }
+
+  /* Hide raw inline actions on small mobile header, move into dropdown or keep compact */
+  .nav-actions {
+    display: flex;
+    gap: 6px;
+  }
+
+  .nav-actions .btn-ghost {
+    display: none; /* Hide Masuk button on header bar, accessible in menu or main CTA */
+  }
+
+  .nav-actions .btn-primary {
+    padding: 8px 16px;
+    font-size: 12px;
   }
 
   .nav-links {
     display: none;
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
     width: 100%;
     flex-direction: column;
     background: var(--color-limestone);
-    border-radius: var(--radius-medium);
-    margin-top: 12px;
-    padding: 8px;
-    gap: 2px;
-    order: 99;
+    border-radius: 24px;
+    padding: 12px;
+    gap: 4px;
+    box-shadow: 0 12px 32px rgba(7,6,7,0.12);
+    z-index: 101;
   }
 
   .nav-links.open {
     display: flex;
   }
 
-  .nav-links li,
-  .nav-links div.nav-divider {
-    display: none;
-  }
-
   .nav-links li {
     display: block;
+    width: 100%;
+  }
+
+  .nav-links div.nav-divider {
+    display: none;
   }
 
   .nav-links .nav-link {
     display: block;
     padding: 12px 16px;
     border-radius: var(--radius-medium);
-    transition: background 0.15s;
+    font-size: 15px;
+    width: 100%;
   }
 
   .nav-links .nav-link:hover {
     background: var(--color-pumice);
   }
 
-  .nav-actions {
-    display: flex;
-    gap: 8px;
-  }
-
-  .nav-actions .btn-primary,
-  .nav-actions .btn-ghost {
-    padding: 10px 16px;
-    font-size: 13px;
-  }
-
   .mobile-nav-toggle {
     display: flex;
     align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--color-pumice);
+    border: none;
   }
 }
 
@@ -1379,5 +1410,118 @@ body {
 
   .toast {
     bottom: max(16px, env(safe-area-inset-bottom));
+  }
+}
+
+/* ── Steps Grid (Cara Kerja) ── */
+.steps-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--spacing-24);
+  position: relative;
+}
+
+.steps-connecting-line {
+  position: absolute;
+  top: 36px;
+  left: 10%;
+  right: 10%;
+  height: 1.5px;
+  background: repeating-linear-gradient(to right, var(--color-obsidian) 0, var(--color-obsidian) 6px, transparent 6px, transparent 12px);
+  z-index: 0;
+}
+
+.step-card {
+  text-align: center;
+  padding: 0 var(--spacing-16);
+  position: relative;
+  z-index: 1;
+}
+
+.step-number-circle {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  font-family: var(--font-display);
+  font-size: 26px;
+  color: white;
+  letter-spacing: 0.02em;
+}
+
+@media (max-width: 900px) {
+  .steps-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 32px;
+  }
+}
+
+@media (max-width: 640px) {
+  .cara-kerja-section {
+    padding: 48px 0 !important;
+  }
+
+  .steps-grid {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+
+  .step-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 0;
+  }
+
+  .step-number-circle {
+    width: 60px;
+    height: 60px;
+    font-size: 22px;
+    margin-bottom: 12px;
+  }
+}
+
+/* ── CTA Banner Card (Tentang RCI) ── */
+.cta-banner-card {
+  background: var(--color-obsidian);
+  border-radius: var(--radius-cards);
+  padding: 80px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.cta-halftone-bg {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  background: linear-gradient(135deg, var(--color-plasma-violet), var(--color-ember));
+  border-radius: 0 40px 40px 0;
+  opacity: 0.15;
+}
+
+.cta-halftone-overlay {
+  position: absolute;
+  right: 40px;
+  top: 40px;
+  bottom: 40px;
+  width: 45%;
+}
+
+@media (max-width: 900px) {
+  .cta-banner-card {
+    grid-template-columns: 1fr;
+    padding: 40px 24px;
+    border-radius: 28px;
+    gap: 24px;
   }
 }

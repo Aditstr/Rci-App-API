@@ -147,16 +147,16 @@
 <!-- ════════════════════════════════
      CARA KERJA
 ════════════════════════════════ -->
-<section id="cara-kerja" class="section" style="background-color:var(--color-limestone); padding:80px 0;">
+<section id="cara-kerja" class="section cara-kerja-section" style="background-color:var(--color-limestone);">
     <div class="page-container">
-        <div style="text-align:center; margin-bottom:56px;">
+        <div style="text-align:center; margin-bottom:48px;">
             <span class="tag" style="margin-bottom:16px;">Cara Kerja</span>
             <h2 class="font-display text-2xl-heading" style="color:var(--color-obsidian);">EMPAT LANGKAH<br>MENUJU KEADILAN</h2>
         </div>
 
-        <div style="display:grid; grid-template-columns: repeat(4,1fr); gap:0; position:relative;">
-            <!-- Connecting line -->
-            <div style="position:absolute; top:36px; left:10%; right:10%; height:1.5px; background: repeating-linear-gradient(to right, var(--color-obsidian) 0,var(--color-obsidian) 6px, transparent 6px, transparent 12px); z-index:0;"></div>
+        <div class="steps-grid">
+            <!-- Connecting line (desktop only) -->
+            <div class="steps-connecting-line hide-mobile"></div>
 
             @foreach([
                 ['01','Daftar Akun', 'Registrasi gratis dalam 2 menit. Verifikasi email dan mulai konsultasi pertama Anda.'],
@@ -164,9 +164,9 @@
                 ['03','Terhubung ke Ahli', 'Paralegal atau Pengacara yang tepat ditugaskan berdasarkan jenis dan kompleksitas kasus.'],
                 ['04','Selesaikan Kasus', 'Pantau progres real-time, bayar aman via escrow, dan beri ulasan setelah selesai.'],
             ] as $i => $step)
-            <div style="text-align:center; padding:0 16px; position:relative; z-index:1;">
-                <div style="width:72px;height:72px;background:{{ $i === 0 ? 'var(--color-ember)' : 'var(--color-obsidian)' }};border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px; font-family:var(--font-display); font-size:26px; color:white; letter-spacing:0.02em;">{{ $step[0] }}</div>
-                <h3 class="font-display" style="font-size:22px; margin-bottom:12px; letter-spacing:0.02em;">{{ strtoupper($step[1]) }}</h3>
+            <div class="step-card">
+                <div class="step-number-circle" style="background:{{ $i === 0 ? 'var(--color-ember)' : 'var(--color-obsidian)' }};">{{ $step[0] }}</div>
+                <h3 class="font-display" style="font-size:20px; margin-bottom:8px; letter-spacing:0.02em;">{{ strtoupper($step[1]) }}</h3>
                 <p style="font-size:14px; color:rgba(7,6,7,0.6); line-height:1.6;">{{ $step[2] }}</p>
             </div>
             @endforeach
@@ -179,21 +179,21 @@
 ════════════════════════════════ -->
 <section id="tentang" class="section">
     <div class="page-container">
-        <div style="background:var(--color-obsidian); border-radius:var(--radius-cards); padding:80px; display:grid; grid-template-columns:1fr 1fr; gap:48px; align-items:center; position:relative; overflow:hidden;">
+        <div class="cta-banner-card">
             <!-- Background halftone -->
-            <div style="position:absolute; right:0; top:0; bottom:0; width:50%; background:linear-gradient(135deg,var(--color-plasma-violet),var(--color-ember)); border-radius:0 40px 40px 0; opacity:0.15;"></div>
-            <div style="position:absolute; right:40px; top:40px; bottom:40px; width:45%;">
+            <div class="cta-halftone-bg hide-mobile"></div>
+            <div class="cta-halftone-overlay hide-mobile">
                 <div class="halftone-overlay" style="border-radius:24px; opacity:0.4;"></div>
             </div>
 
             <div style="position:relative; z-index:1;">
                 <span class="tag" style="background:rgba(255,255,255,0.1); color:rgba(255,255,255,0.7); margin-bottom:20px;">Tentang RCI</span>
                 <h2 class="font-display text-2xl-heading" style="color:var(--color-chalk); margin-bottom:24px;">KEADILAN<br>BUKAN PRIVILEGE</h2>
-                <p style="color:rgba(255,255,255,0.65); font-size:16px; line-height:1.7; margin-bottom:32px;">
+                <p style="color:rgba(255,255,255,0.65); font-size:15px; line-height:1.7; margin-bottom:32px;">
                     RCI hadir untuk menjembatani kesenjangan akses hukum di Indonesia. Dengan teknologi AI dan jaringan profesional hukum yang terverifikasi, kami memastikan setiap warga negara mendapat pendampingan hukum berkualitas.
                 </p>
-                <div style="display:flex; gap:16px; flex-wrap:wrap;">
-                    <a href="/register" class="btn-primary" style="padding:16px 32px; font-size:18px;">Bergabung Sekarang</a>
+                <div class="btn-cta-group" style="display:flex; gap:16px; flex-wrap:wrap;">
+                    <a href="/register" class="btn-primary" style="padding:16px 32px; font-size:16px;">Bergabung Sekarang</a>
                     <a href="/login" class="btn-ghost" style="color:var(--color-chalk);">Sudah punya akun? →</a>
                 </div>
             </div>
