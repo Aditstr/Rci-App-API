@@ -201,6 +201,10 @@ body {
 }
 
 @media (max-width: 768px) {
+  :root {
+    --card-padding: 24px;
+    --radius-cards: 28px;
+  }
   .page-container {
     padding: 0 var(--spacing-20);
   }
@@ -313,7 +317,7 @@ body {
   cursor: pointer;
   text-decoration: none;
   transition: opacity 0.15s ease, transform 0.1s ease;
-  white-space: nowrap;
+  text-align: center;
 }
 
 .btn-primary:hover {
@@ -341,7 +345,7 @@ body {
   cursor: pointer;
   text-decoration: none;
   transition: background-color 0.15s ease, transform 0.1s ease;
-  white-space: nowrap;
+  text-align: center;
 }
 
 .btn-secondary:hover {
@@ -576,6 +580,8 @@ body {
   .hero-grid {
     grid-template-columns: 1fr;
   }
+}
+
 /* ── Grid Utilities ── */
 .grid-2-cols {
   display: grid;
