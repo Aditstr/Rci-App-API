@@ -70,9 +70,11 @@ Route::get('/admin/expert/{profile}/document/{type}', function (ExpertProfile $p
 
     $path = $pathMap[$type] ?? null;
 
-    if (! $path || ! Storage::disk('local')->exists($path)) {
+    if (! $path || ! Storage::disk()->exists($path)) {
         abort(404, 'Dokumen tidak ditemukan.');
     }
 
-    return Storage::disk('local')->download($path);
+    // Jika menggunakan S3, kita bisa me-redirect ke temporary URL atau langsung mengunduhnya
+    // Namun download() bisa berfungsi juga jika stream file bisa diakses
+    return Storage::disk()->download($path);
 })->middleware(['web', 'auth'])->name('expert.document.download');
