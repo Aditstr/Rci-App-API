@@ -218,15 +218,15 @@ class AuthController extends Controller
             $user = User::where('email', $googleUser->getEmail())->first();
 
             if (!$user) {
-                // Register new user as client by default
+                // Daftar user baru via Google — langsung terverifikasi
                 $user = User::create([
-                    'name' => $googleUser->getName(),
-                    'email' => $googleUser->getEmail(),
-                    'google_id' => $googleUser->getId(),
-                    'avatar_url' => $googleUser->getAvatar(),
-                    'role' => 'client',
-                    'email_verified_at' => now(),
-                    'is_verified' => true,
+                    'name'              => $googleUser->getName(),
+                    'email'             => $googleUser->getEmail(),
+                    'google_id'         => $googleUser->getId(),
+                    'avatar_url'        => $googleUser->getAvatar(),
+                    'role'              => 'client',
+                    'email_verified_at' => now(), // Google sudah verifikasi email
+                    'is_verified'       => true,
                     // password remains null
                 ]);
 
@@ -235,15 +235,25 @@ class AuthController extends Controller
                     ['user_id' => $user->id],
                     ['balance' => 0]
                 );
-                
-                event(new Registered($user));
+
+                // Tidak perlu kirim email verifikasi — Google sudah verifikasi
+                // event(new Registered($user));
             } else {
-                // Update existing user with google id if not set
+                // User lama login via Google — update google_id dan pastikan email terverifikasi
+                $updates = [];
+
                 if (!$user->google_id) {
-                    $user->update([
-                        'google_id' => $googleUser->getId(),
-                        'avatar_url' => $user->avatar_url ?? $googleUser->getAvatar(),
-                    ]);
+                    $updates['google_id']   = $googleUser->getId();
+                    $updates['avatar_url']  = $user->avatar_url ?? $googleUser->getAvatar();
+                }
+
+                // Tandai email sebagai terverifikasi jika belum
+                if (!$user->email_verified_at) {
+                    $updates['email_verified_at'] = now();
+                }
+
+                if (!empty($updates)) {
+                    $user->update($updates);
                 }
             }
 

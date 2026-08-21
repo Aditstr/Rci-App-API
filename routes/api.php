@@ -106,16 +106,13 @@ Route::prefix('v1')->group(function () {
     });
 
     // ──────────────────────────────────────────────
-    // RCI AI Chat — Authenticated only (no email verification required)
-    // ──────────────────────────────────────────────
-    Route::middleware('auth:sanctum')->group(function () {
-        Route::post('/rci/chat', [RciApiController::class, 'chat'])->name('api.v1.rci.chat');
-    });
-
-    // ──────────────────────────────────────────────
     // RCI API — Authenticated (Sanctum) & Verified Email
+    // (Google users: auto-verified at login)
     // ──────────────────────────────────────────────
     Route::middleware(['auth:sanctum', 'verified'])->prefix('rci')->group(function () {
+        // AI Chat — all authenticated & verified users
+        Route::post('/chat', [RciApiController::class, 'chat'])->name('api.v1.rci.chat');
+
         // Wallet Info — all authenticated users (client, paralegal, lawyer)
         Route::get('/wallet',              [WalletController::class, 'show'])->name('api.v1.rci.wallet.show');
         Route::get('/wallet/transactions', [WalletController::class, 'transactions'])->name('api.v1.rci.wallet.transactions');
