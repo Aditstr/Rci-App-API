@@ -340,10 +340,20 @@ class AuthController extends Controller
 
         $profile = $user->expertProfile;
 
-        if (! $profile || ! $profile->isRejected()) {
+        if (! $profile) {
             return response()->json([
                 'success' => false,
-                'message' => 'Anda hanya dapat mengunggah ulang dokumen jika pendaftaran sebelumnya ditolak.',
+                'message' => 'Profil pakar tidak ditemukan.',
+            ], 404);
+        }
+
+        // Allow if rejected, or if it's the first time upload (pending but no ktp)
+        $isFirstTimeUpload = $profile->isPending() && empty($profile->ktp_path);
+        
+        if (! $profile->isRejected() && ! $isFirstTimeUpload) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda hanya dapat mengunggah dokumen jika pendaftaran ditolak atau ini adalah unggahan pertama.',
             ], 400);
         }
 
