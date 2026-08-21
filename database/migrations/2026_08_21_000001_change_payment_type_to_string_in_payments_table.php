@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Add 'topup' to Postgres enum
-        \Illuminate\Support\Facades\DB::statement("ALTER TYPE payments_payment_type_enum ADD VALUE IF NOT EXISTS 'topup'");
+        // Drop the check constraint created by Laravel's enum() to allow any string
+        \Illuminate\Support\Facades\DB::statement("ALTER TABLE payments DROP CONSTRAINT IF EXISTS payments_payment_type_check");
     }
 
     /**
