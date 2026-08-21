@@ -53,7 +53,7 @@ class ExpertVerificationResource extends Resource
                         Infolists\Components\TextEntry::make('user.role')
                             ->label('Role')
                             ->badge()
-                            ->color(fn (string $state): string => match ($state) {
+                            ->color(fn (?string $state): string => match ($state) {
                                 'lawyer' => 'info',
                                 'paralegal' => 'success',
                                 default => 'gray',
@@ -64,48 +64,48 @@ class ExpertVerificationResource extends Resource
                     ->schema([
                         Infolists\Components\ImageEntry::make('ktp_path')
                             ->label('KTP')
-                            ->hidden(fn ($record) => empty($record->ktp_path))
+                            ->hidden(fn (?ExpertProfile $record) => empty($record->ktp_path))
                             ->height(200)
                             ->extraImgAttributes(['style' => 'object-fit: contain;']),
                         Infolists\Components\TextEntry::make('ktp_path_empty')
                             ->label('KTP')
                             ->default('— Tidak ada')
-                            ->hidden(fn ($record) => !empty($record->ktp_path)),
+                            ->hidden(fn (?ExpertProfile $record) => !empty($record->ktp_path)),
                         
                         Infolists\Components\ImageEntry::make('ijazah_path')
                             ->label('Ijazah')
-                            ->hidden(fn ($record) => empty($record->ijazah_path))
+                            ->hidden(fn (?ExpertProfile $record) => empty($record->ijazah_path))
                             ->height(200)
                             ->extraImgAttributes(['style' => 'object-fit: contain;']),
                         Infolists\Components\TextEntry::make('ijazah_path_empty')
                             ->label('Ijazah')
                             ->default('— Tidak ada')
-                            ->hidden(fn ($record) => !empty($record->ijazah_path)),
+                            ->hidden(fn (?ExpertProfile $record) => !empty($record->ijazah_path)),
 
                         Infolists\Components\ImageEntry::make('license_card_path')
                             ->label('Kartu Izin Praktik (PERADI)')
-                            ->hidden(fn ($record) => empty($record->license_card_path))
+                            ->hidden(fn (?ExpertProfile $record) => empty($record->license_card_path))
                             ->height(200)
                             ->extraImgAttributes(['style' => 'object-fit: contain;']),
                         Infolists\Components\TextEntry::make('license_card_empty')
                             ->label('Kartu Izin Praktik (PERADI)')
                             ->default('— Tidak ada')
-                            ->hidden(fn ($record) => !empty($record->license_card_path)),
+                            ->hidden(fn (?ExpertProfile $record) => !empty($record->license_card_path)),
 
                         Infolists\Components\ImageEntry::make('selfie_path')
                             ->label('Foto Selfie')
-                            ->hidden(fn ($record) => empty($record->selfie_path))
+                            ->hidden(fn (?ExpertProfile $record) => empty($record->selfie_path))
                             ->height(200)
                             ->extraImgAttributes(['style' => 'object-fit: contain;']),
                         Infolists\Components\TextEntry::make('selfie_path_empty')
                             ->label('Foto Selfie')
                             ->default('— Tidak ada')
-                            ->hidden(fn ($record) => !empty($record->selfie_path)),
+                            ->hidden(fn (?ExpertProfile $record) => !empty($record->selfie_path)),
 
                         Infolists\Components\TextEntry::make('cv_path')
                             ->label('CV / Resume')
-                            ->formatStateUsing(fn ($state) => $state ? basename($state) : '— Tidak ada')
-                            ->url(fn ($record) => $record->cv_path ? route('expert.document.download', ['profile' => $record->id, 'type' => 'cv']) : null, true)
+                            ->formatStateUsing(fn (?string $state) => $state ? basename($state) : '— Tidak ada')
+                            ->url(fn (?ExpertProfile $record) => $record?->cv_path ? route('expert.document.download', ['profile' => $record->id, 'type' => 'cv']) : null, true)
                             ->color('primary')
                             ->icon('heroicon-o-document-arrow-down'),
                     ])->columns(2),
@@ -115,7 +115,7 @@ class ExpertVerificationResource extends Resource
                         Infolists\Components\TextEntry::make('verification_status')
                             ->label('Status')
                             ->badge()
-                            ->color(fn (string $state): string => match ($state) {
+                            ->color(fn (?string $state): string => match ($state) {
                                 'pending'  => 'warning',
                                 'approved' => 'success',
                                 'rejected' => 'danger',
@@ -151,7 +151,7 @@ class ExpertVerificationResource extends Resource
                 Tables\Columns\TextColumn::make('user.role')
                     ->label('Role')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn (?string $state): string => match ($state) {
                         'lawyer' => 'info',
                         'paralegal' => 'success',
                         default => 'gray',
@@ -159,17 +159,17 @@ class ExpertVerificationResource extends Resource
                 Tables\Columns\TextColumn::make('verification_status')
                     ->label('Status')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn (?string $state): string => match ($state) {
                         'pending'  => 'warning',
                         'approved' => 'success',
                         'rejected' => 'danger',
                         default    => 'gray',
                     })
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                    ->formatStateUsing(fn (?string $state): string => match ($state) {
                         'pending'  => '⏳ Pending',
                         'approved' => '✅ Approved',
                         'rejected' => '❌ Rejected',
-                        default    => $state,
+                        default    => (string) $state,
                     }),
                 Tables\Columns\IconColumn::make('ktp_path')
                     ->label('KTP')
