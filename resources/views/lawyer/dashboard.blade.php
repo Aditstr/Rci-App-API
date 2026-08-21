@@ -29,7 +29,7 @@
     <div class="card" style="padding:32px;">
         <h1 class="font-display text-heading-lg" style="margin-bottom:24px;">SOP & Verifikasi <span style="color:var(--color-ember);">Pengacara</span></h1>
         
-        <div id="sop-content" style="padding:24px; background:rgba(7,6,7,0.02); border-radius:16px; margin-bottom:32px; border:1px solid rgba(7,6,7,0.05); font-size:15px; line-height:1.6;">
+        <div id="sop-content" class="sop-content-styled" style="padding:24px; background:rgba(7,6,7,0.02); border-radius:16px; margin-bottom:32px; border:1px solid rgba(7,6,7,0.05); font-size:15px; line-height:1.6;">
             Memuat SOP...
         </div>
 
@@ -40,29 +40,29 @@
             <div class="grid-2-cols" style="margin-bottom:24px;">
                 <div>
                     <label class="font-display" style="display:block; margin-bottom:8px;">KTP Asli (JPG/PNG/PDF max 5MB)</label>
-                    <input type="file" id="ktp_file" accept=".jpg,.jpeg,.png,.pdf" required style="width:100%; padding:12px; border:1px solid var(--color-pumice); border-radius:8px;">
+                    <input type="file" id="ktp_file" accept=".jpg,.jpeg,.png,.pdf" required class="input-file-styled" onchange="checkFiles()">
                 </div>
                 <div>
                     <label class="font-display" style="display:block; margin-bottom:8px;">Ijazah Terakhir (JPG/PNG/PDF max 5MB)</label>
-                    <input type="file" id="ijazah_file" accept=".jpg,.jpeg,.png,.pdf" required style="width:100%; padding:12px; border:1px solid var(--color-pumice); border-radius:8px;">
+                    <input type="file" id="ijazah_file" accept=".jpg,.jpeg,.png,.pdf" required class="input-file-styled" onchange="checkFiles()">
                 </div>
                 <div>
                     <label class="font-display" style="display:block; margin-bottom:8px;">Kartu Peradi/Lisensi (JPG/PNG/PDF max 5MB)</label>
-                    <input type="file" id="license_file" accept=".jpg,.jpeg,.png,.pdf" required style="width:100%; padding:12px; border:1px solid var(--color-pumice); border-radius:8px;">
+                    <input type="file" id="license_file" accept=".jpg,.jpeg,.png,.pdf" required class="input-file-styled" onchange="checkFiles()">
                 </div>
                 <div>
                     <label class="font-display" style="display:block; margin-bottom:8px;">Selfie dengan KTP (JPG/PNG max 5MB)</label>
-                    <input type="file" id="selfie_file" accept=".jpg,.jpeg,.png" required style="width:100%; padding:12px; border:1px solid var(--color-pumice); border-radius:8px;">
+                    <input type="file" id="selfie_file" accept=".jpg,.jpeg,.png" required class="input-file-styled" onchange="checkFiles()">
                 </div>
                 <div class="col-span-full">
                     <label class="font-display" style="display:block; margin-bottom:8px;">Curriculum Vitae / CV (Opsional, PDF/DOC max 10MB)</label>
-                    <input type="file" id="cv_file" accept=".pdf,.doc,.docx" style="width:100%; padding:12px; border:1px solid var(--color-pumice); border-radius:8px;">
+                    <input type="file" id="cv_file" accept=".pdf,.doc,.docx" class="input-file-styled" onchange="checkFiles()">
                 </div>
             </div>
             
             <div id="onboarding-error" style="color:var(--color-ember); margin-bottom:16px; display:none;"></div>
             
-            <button type="submit" class="btn-primary" id="btn-submit-onboarding" style="width:100%; justify-content:center; padding:16px; font-size:16px;">Saya Setuju dengan SOP & Kirim Dokumen</button>
+            <button type="submit" class="btn-primary" id="btn-submit-onboarding" style="width:100%; justify-content:center; padding:16px; font-size:16px;" disabled>Pilih Dokumen Wajib Terlebih Dahulu</button>
         </form>
     </div>
 </div>
@@ -212,6 +212,22 @@ function fetchSOP() {
     }).catch(() => {
         document.getElementById('sop-content').innerHTML = '<p>Terjadi kesalahan saat memuat SOP.</p>';
     });
+}
+
+window.checkFiles = function() {
+    const ktp = document.getElementById('ktp_file').files.length > 0;
+    const ijazah = document.getElementById('ijazah_file').files.length > 0;
+    const license = document.getElementById('license_file').files.length > 0;
+    const selfie = document.getElementById('selfie_file').files.length > 0;
+    const btn = document.getElementById('btn-submit-onboarding');
+    
+    if (ktp && ijazah && license && selfie) {
+        btn.disabled = false;
+        btn.textContent = 'Saya Setuju dengan SOP & Kirim Dokumen';
+    } else {
+        btn.disabled = true;
+        btn.textContent = 'Pilih Dokumen Wajib Terlebih Dahulu';
+    }
 }
 
 window.submitOnboarding = async function(e) {
