@@ -18,6 +18,10 @@ php artisan view:cache
 echo "📦 Running migrations..."
 php artisan migrate --force
 
+# Seed Admin user (Safe to run multiple times due to updateOrCreate)
+echo "🌱 Seeding Admin user..."
+php artisan db:seed --class=AdminSeeder --force
+
 # Create storage link
 php artisan storage:link --force 2>/dev/null || true
 
