@@ -81,6 +81,7 @@
 
 @push('scripts')
 <script>
+(function() {
 const token = localStorage.getItem('rci_token');
 
 window.onUserLoaded = function(user) {
@@ -134,5 +135,7 @@ function openQuote(caseId) {
         showToast('Penawaran berhasil dikirim!');
     }).catch(err => showToast(err.message, 'error'));
 }
+window.openQuote = openQuote;
+})();
 </script>
 @endpush

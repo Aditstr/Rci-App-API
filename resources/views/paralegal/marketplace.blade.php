@@ -39,6 +39,7 @@
 
 @push('scripts')
 <script>
+(function() {
 const token = localStorage.getItem('rci_token');
 let allCases = [];
 let currentFilter = 'all';
@@ -111,5 +112,8 @@ function applyCase(caseId, btn) {
         btn.disabled = false;
     });
 }
+window.filterCases = filterCases;
+window.applyCase   = applyCase;
+})();
 </script>
 @endpush

@@ -102,6 +102,7 @@
 
 @push('scripts')
 <script>
+(function() {
 const token = localStorage.getItem('rci_token');
 let allCases = [];
 let draggingId = null;
@@ -194,5 +195,8 @@ function escalateCase(id) {
         loadKanban();
     }).catch(() => showToast('Gagal eskalasi', 'error'));
 }
+window.dropCard    = dropCard;
+window.escalateCase = escalateCase;
+})();
 </script>
 @endpush

@@ -55,6 +55,7 @@
 
 @push('scripts')
 <script>
+(function() {
 const token = localStorage.getItem('rci_token');
 let allCases = [];
 const statusColors = {
@@ -101,5 +102,7 @@ function filterStatus(status, btn) {
     btn.style.background = 'var(--color-ember)'; btn.style.color = 'white';
     renderCases(status === 'all' ? allCases : allCases.filter(c => c.status === status));
 }
+window.filterStatus = filterStatus;
+})();
 </script>
 @endpush

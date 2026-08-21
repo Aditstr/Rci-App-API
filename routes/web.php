@@ -16,14 +16,19 @@ Route::get('/auth/google/callback', fn() => view('auth.google-callback'));
 
 // ─── Client Dashboard ─────────────────────────────────
 Route::prefix('client')->group(function () {
-    Route::get('/',            fn() => view('client.dashboard'));
-    Route::get('/ai-chat',     fn() => view('client.ai-chat'));
-    Route::get('/cases',       fn() => view('client.cases'));
-    Route::get('/cases/new',   fn() => view('client.case-new'));
-    Route::get('/cases/{id}',  fn() => view('client.case-detail'));
-    Route::get('/wallet',      fn() => view('client.wallet'));
+    Route::get('/',              fn() => view('client.dashboard'));
+    Route::get('/ai-chat',       fn() => view('client.ai-chat'));
+    Route::get('/cases',         fn() => view('client.cases'));
+    Route::get('/cases/new',     fn() => view('client.case-new'));
+    Route::get('/cases/{id}',    fn() => view('client.case-detail'));
+    Route::get('/wallet',        fn() => view('client.wallet'));
     Route::get('/notifications', fn() => view('client.notifications'));
+    Route::get('/profile',       fn() => view('client.profile'));
 });
+
+// ─── Payment Result Pages (Xendit Redirect) ───────────
+Route::get('/payment/success', fn() => view('payment.success'));
+Route::get('/payment/failed',  fn() => view('payment.failed'));
 
 // ─── Paralegal Workspace ──────────────────────────────
 Route::prefix('paralegal')->group(function () {
@@ -34,9 +39,9 @@ Route::prefix('paralegal')->group(function () {
 
 // ─── Lawyer Dashboard ─────────────────────────────────
 Route::prefix('lawyer')->group(function () {
-    Route::get('/',         fn() => view('lawyer.dashboard'));
-    Route::get('/cases',    fn() => view('lawyer.dashboard'));
-    Route::get('/revenue',  fn() => view('lawyer.dashboard'));
+    Route::get('/',        fn() => view('lawyer.dashboard'));
+    Route::get('/cases',   fn() => view('lawyer.cases'));
+    Route::get('/revenue', fn() => view('lawyer.revenue'));
 });
 
 Route::get('/swagger.yaml', function () {

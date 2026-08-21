@@ -26,6 +26,7 @@
 
 @push('scripts')
 <script>
+(function() {
 const token = localStorage.getItem('rci_token');
 window.onUserLoaded = function() { loadNotifs(); };
 
@@ -57,5 +58,8 @@ function markAllRead() {
     fetch('/api/v1/notifications/read-all', {method:'POST', headers:{'Authorization':'Bearer '+token,'Accept':'application/json'}})
         .then(()=>{ showToast('Semua notifikasi telah dibaca.'); loadNotifs(); });
 }
+window.markRead    = markRead;
+window.markAllRead = markAllRead;
+})();
 </script>
 @endpush

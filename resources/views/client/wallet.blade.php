@@ -71,6 +71,7 @@
 
 @push('scripts')
 <script>
+(function() {
 const token = localStorage.getItem('rci_token');
 
 window.onUserLoaded = function(user) {
@@ -153,5 +154,10 @@ function showUpgrade() {
         else showToast('Upgrade berhasil!');
     }).catch(() => showToast('Gagal memproses upgrade','error'));
 }
+window.showTopup   = showTopup;
+window.showUpgrade = showUpgrade;
+window.setTopupAmt = setTopupAmt;
+window.doTopup     = doTopup;
+})();
 </script>
 @endpush

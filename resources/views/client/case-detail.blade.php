@@ -70,6 +70,7 @@
 
 @push('scripts')
 <script>
+(function() {
 const token = localStorage.getItem('rci_token');
 const caseId = window.location.pathname.split('/').pop();
 
@@ -162,5 +163,12 @@ async function caseAction(action) {
     });
     loadCase();
 }
+window.sendMsg = sendMsg;
+window.confirmComplete = confirmComplete;
+window.disputeCase     = disputeCase;
+window.cancelCase      = cancelCase;
+window.approveQuote    = approveQuote;
+window.rejectQuote     = rejectQuote;
+})();
 </script>
 @endpush
