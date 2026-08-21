@@ -25,6 +25,9 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // API-only: jangan redirect ke route 'login', langsung throw 401
         $middleware->redirectGuestsTo(fn (Request $request) => null);
+
+        // Trust all proxies (important for Render / Load Balancers to serve HTTPS assets)
+        $middleware->trustProxies(at: '*');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->render(function (\Throwable $e, \Illuminate\Http\Request $request) {
