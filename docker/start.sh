@@ -22,6 +22,10 @@ php artisan migrate --force
 echo "🌱 Seeding Admin user..."
 php artisan db:seed --class=AdminSeeder --force
 
+# Seed Settings
+echo "⚙️ Seeding Settings..."
+php artisan db:seed --class=SettingSeeder --force
+
 # Create storage link
 php artisan storage:link --force 2>/dev/null || true
 

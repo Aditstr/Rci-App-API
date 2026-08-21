@@ -220,6 +220,9 @@ Route::prefix('v1')->group(function () {
         Route::get('/{id}/status', [PaymentController::class, 'status'])->name('api.v1.payments.status');
     });
 
+    // ──────────────────────────────────────────────
+    // Public Settings
+    // ──────────────────────────────────────────────
+    Route::get('/settings/{key}', [\App\Http\Controllers\Api\SettingController::class, 'show'])->name('api.v1.settings.show');
 });
-
 
