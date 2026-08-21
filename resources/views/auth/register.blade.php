@@ -169,7 +169,8 @@ document.getElementById('reg-form').addEventListener('submit', async function(e)
         }
         okBox.textContent = '✓ Akun berhasil dibuat! Cek email Anda untuk verifikasi, lalu masuk.';
         okBox.style.display = 'block';
-        setTimeout(() => window.location.href = '/login', 2800);
+        alert('Akun berhasil dibuat!\n\nSistem telah mengirimkan tautan verifikasi ke email Anda. Silakan cek kotak masuk (atau folder spam) Anda sebelum login.');
+        window.location.href = '/login';
     } catch(err) {
         errBox.textContent = err.message;
         errBox.style.display = 'block';
