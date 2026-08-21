@@ -59,10 +59,29 @@ return Application::configure(basePath: dirname(__DIR__))
                     ], 403);
                 }
 
+                if ($e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+                    $statusCode = $e->getStatusCode();
+                    $message = $e->getMessage();
+                    if ($statusCode === 403 && empty($message)) {
+                        $message = 'Email Anda belum terverifikasi atau Anda tidak memiliki akses.';
+                    }
+                    return response()->json([
+                        'success' => false,
+                        'message' => $message ?: 'Terjadi kesalahan HTTP.',
+                    ], $statusCode);
+                }
+
+                \Illuminate\Support\Facades\Log::error('API 500 Error: ' . $e->getMessage(), [
+                    'exception' => get_class($e),
+                    'file'      => $e->getFile(),
+                    'line'      => $e->getLine(),
+                    'trace'     => $e->getTraceAsString(),
+                ]);
+
                 return response()->json([
                     'success' => false,
-                    'message' => 'Terjadi kesalahan pada server.',
-                    'error'   => config('app.debug') ? $e->getMessage() : 'Internal Server Error',
+                    'message' => 'Terjadi kesalahan pada server: ' . $e->getMessage(),
+                    'error'   => $e->getMessage(),
                 ], 500);
             }
         });
