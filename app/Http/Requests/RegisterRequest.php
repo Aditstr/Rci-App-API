@@ -24,20 +24,8 @@ class RegisterRequest extends FormRequest
 
         $role = $this->input('role');
 
-        // ── Paralegal: KTP + Ijazah ─────────────────────────
-        if ($role === 'paralegal') {
-            $rules['ktp']    = ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'];
-            $rules['ijazah'] = ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'];
-        }
-
-        // ── Lawyer: KTP + Ijazah + License + Selfie (+ CV opsional) ──
-        if ($role === 'lawyer') {
-            $rules['ktp']          = ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'];
-            $rules['ijazah']       = ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'];
-            $rules['license_card'] = ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'];
-            $rules['selfie']       = ['required', 'file', 'mimes:jpg,jpeg,png',     'max:5120'];
-            $rules['cv']           = ['nullable', 'file', 'mimes:pdf,doc,docx',      'max:10240'];
-        }
+        // ── Expert document upload moved to post-login Dashboard (Verification) ──
+        // No file validation is required during initial registration anymore.
 
         return $rules;
     }
