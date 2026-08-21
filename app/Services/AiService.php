@@ -237,52 +237,116 @@ PROMPT;
         $systemPrompt = $isPro ? self::SYSTEM_PROMPT_PRO : self::SYSTEM_PROMPT_FREE;
         $systemPrompt .= $retrievedDocsText;
 
-        // 4. Kirim prompt ke OpenRouter.
-        try {
-            $apiKey = config('services.openrouter.api_key');
+        // 4. Kirim ke AI API (Gemini → OpenRouter → Static Fallback)
+        $aiAnswer = $this->callGemini($systemPrompt, $message)
+                 ?? $this->callOpenRouter($systemPrompt, $message);
 
-            if ($apiKey) {
-                $response = Http::withToken($apiKey)
-                    ->timeout(15)
-                    ->withHeaders([
-                        'HTTP-Referer' => config('app.url'),
-                        'X-Title' => config('app.name'),
-                    ])
-                    ->post('https://openrouter.ai/api/v1/chat/completions', [
-                        'model' => config('services.openrouter.model', 'openrouter/free'),
-                        'messages' => [
-                            ['role' => 'system', 'content' => $systemPrompt],
-                            ['role' => 'user', 'content' => $message],
-                        ],
-                        'temperature' => 0.5,
-                    ]);
-
-                $content = $response->json('choices.0.message.content');
-
-                if ($response->successful() && !empty($content)) {
-                    return [
-                        'answer'        => trim($content),
-                        'topic'         => $topic,
-                        'confidence'    => $isPro ? 0.95 : 0.65, // Pro lebih yakin
-                        'disclaimer'    => $isPro 
-                            ? 'Analisis berdasarkan hukum positif Indonesia. Konsultasikan dengan Advokat.' 
-                            : 'Jawaban bersifat umum. Hubungi Paralegal kami untuk langkah teknis.',
-                    ];
-                }
-
-                Log::error('OpenRouter API Error: ' . $response->status() . ' - ' . $response->body());
-            }
-        } catch (\Throwable $e) {
-            Log::error("AI Exception: " . $e->getMessage());
+        if ($aiAnswer !== null) {
+            return [
+                'answer'     => trim($aiAnswer),
+                'topic'      => $topic,
+                'confidence' => $isPro ? 0.95 : 0.70,
+                'disclaimer' => $isPro
+                    ? 'Analisis berdasarkan hukum positif Indonesia. Konsultasikan dengan Advokat.'
+                    : 'Jawaban bersifat umum. Hubungi Paralegal kami untuk langkah teknis.',
+            ];
         }
 
-        // Fallback jika OpenRouter error/timeout
-        if ($isPro) {
-            return $this->buildProResponse($message, $topic);
-        }
-
-        return $this->buildFreeResponse($message, $topic);
+        // Static fallback jika semua API gagal
+        return $isPro
+            ? $this->buildProResponse($message, $topic)
+            : $this->buildFreeResponse($message, $topic);
     }
+
+    // ──────────────────────────────────────────────
+    // API Callers
+    // ──────────────────────────────────────────────
+
+    /**
+     * Call Google Gemini API (generativelanguage.googleapis.com)
+     */
+    private function callGemini(string $systemPrompt, string $message): ?string
+    {
+        $apiKey = config('services.gemini.api_key');
+        if (empty($apiKey)) {
+            return null;
+        }
+
+        $model = config('services.gemini.model', 'gemini-1.5-flash');
+
+        try {
+            $response = Http::timeout(20)
+                ->post("https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key={$apiKey}", [
+                    'system_instruction' => [
+                        'parts' => [['text' => $systemPrompt]],
+                    ],
+                    'contents' => [
+                        ['role' => 'user', 'parts' => [['text' => $message]]],
+                    ],
+                    'generationConfig' => [
+                        'temperature'     => 0.5,
+                        'maxOutputTokens' => 1024,
+                    ],
+                ]);
+
+            $content = $response->json('candidates.0.content.parts.0.text');
+
+            if ($response->successful() && !empty($content)) {
+                return $content;
+            }
+
+            Log::error('Gemini API Error: ' . $response->status() . ' - ' . $response->body());
+        } catch (\Throwable $e) {
+            Log::error('Gemini Exception: ' . $e->getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * Call OpenRouter API (openai-compatible)
+     */
+    private function callOpenRouter(string $systemPrompt, string $message): ?string
+    {
+        $apiKey = config('services.openrouter.api_key');
+        if (empty($apiKey)) {
+            return null;
+        }
+
+        // Model dengan fallback ke model yang pasti tersedia
+        $model = config('services.openrouter.model', 'google/gemini-flash-1.5-8b');
+
+        try {
+            $response = Http::withToken($apiKey)
+                ->timeout(20)
+                ->withHeaders([
+                    'HTTP-Referer' => config('app.url'),
+                    'X-Title'      => config('app.name'),
+                ])
+                ->post('https://openrouter.ai/api/v1/chat/completions', [
+                    'model'    => $model,
+                    'messages' => [
+                        ['role' => 'system', 'content' => $systemPrompt],
+                        ['role' => 'user',   'content' => $message],
+                    ],
+                    'temperature' => 0.5,
+                    'max_tokens'  => 1024,
+                ]);
+
+            $content = $response->json('choices.0.message.content');
+
+            if ($response->successful() && !empty($content)) {
+                return $content;
+            }
+
+            Log::error('OpenRouter API Error: ' . $response->status() . ' - ' . $response->body());
+        } catch (\Throwable $e) {
+            Log::error('OpenRouter Exception: ' . $e->getMessage());
+        }
+
+        return null;
+    }
+
 
     // ──────────────────────────────────────────────
     // Response Builders
