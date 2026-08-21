@@ -127,7 +127,7 @@ class ExpertVerificationResource extends Resource
                         Infolists\Components\TextEntry::make('verified_at')
                             ->label('Tanggal Verifikasi')
                             ->dateTime()
-                            ->default('—'),
+                            ->placeholder('— Belum diverifikasi'),
                     ])->columns(3),
             ]);
     }
