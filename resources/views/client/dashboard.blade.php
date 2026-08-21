@@ -97,7 +97,10 @@ function formatRupiah(n) {
     return 'Rp ' + (n || 0).toLocaleString('id-ID');
 }
 
-function caseStatusBadge(status) {
+function caseStatusBadge(rawStatus) {
+    let status = (rawStatus || '').toUpperCase();
+    if (status === 'SUBMITTED') status = 'PENDING';
+    
     const map = {
         PENDING:      {bg:'#f5f28e', color:'#070607', label:'Menunggu'},
         IN_PROGRESS:  {bg:'#524ae9', color:'#fff', label:'Berlangsung'},
@@ -107,7 +110,7 @@ function caseStatusBadge(status) {
         DISPUTED:     {bg:'#fc5000', color:'#fff', label:'Dipersengketakan'},
         ON_HOLD:      {bg:'#f5f28e', color:'#070607', label:'Ditunda'},
     };
-    const s = map[status] || {bg:'#e2e2df', color:'#070607', label:status};
+    const s = map[status] || {bg:'#e2e2df', color:'#070607', label:rawStatus};
     return `<span class="tag" style="background:${s.bg}; color:${s.color};">${s.label}</span>`;
 }
 
@@ -124,9 +127,14 @@ window.onUserLoaded = function(user) {
     // Cases
     fetch('/api/v1/cases', { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('rci_token'), 'Accept': 'application/json' }})
         .then(r => r.json()).then(d => {
-            const cases = d.data || d || [];
-            const active = cases.filter(c => !['COMPLETED','CANCELLED'].includes(c.status)).length;
-            const done = cases.filter(c => c.status === 'COMPLETED').length;
+            let cases = (d.data && Array.isArray(d.data.data)) ? d.data.data : (d.data || d || []);
+            if (!Array.isArray(cases)) cases = [];
+            
+            const active = cases.filter(c => {
+                let s = (c.status || '').toUpperCase();
+                return !['COMPLETED','CANCELLED'].includes(s);
+            }).length;
+            const done = cases.filter(c => (c.status || '').toUpperCase() === 'COMPLETED').length;
             document.getElementById('stat-active').textContent = active;
             document.getElementById('stat-done').textContent = done;
 

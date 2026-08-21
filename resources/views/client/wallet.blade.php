@@ -87,9 +87,11 @@ function loadWallet() {
 
     fetch('/api/v1/rci/wallet/transactions', { headers: { 'Authorization': 'Bearer '+token, 'Accept': 'application/json' }})
         .then(r => r.json()).then(d => {
-            const txs = d.data || d || [];
+            let txs = (d.data && Array.isArray(d.data.data)) ? d.data.data : (d.data || d || []);
+            if (!Array.isArray(txs)) txs = [];
+            
             const el = document.getElementById('tx-list');
-            if (!txs.length) {
+            if (!txs || !txs.length) {
                 el.innerHTML = '<div style="text-align:center;padding:32px;color:rgba(7,6,7,0.4);font-size:14px;">Belum ada transaksi.</div>';
                 return;
             }
