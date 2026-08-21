@@ -37,7 +37,7 @@
         <p style="color:rgba(7,6,7,0.6); margin-bottom:24px;">Silakan unggah dokumen persyaratan Anda untuk menyetujui SOP dan mendaftar sebagai Pengacara. Dokumen akan diverifikasi secara ketat oleh Admin.</p>
 
         <form id="onboarding-form" onsubmit="submitOnboarding(event)">
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-bottom:24px;">
+            <div class="grid-2-cols" style="margin-bottom:24px;">
                 <div>
                     <label class="font-display" style="display:block; margin-bottom:8px;">KTP Asli (JPG/PNG/PDF max 5MB)</label>
                     <input type="file" id="ktp_file" accept=".jpg,.jpeg,.png,.pdf" required style="width:100%; padding:12px; border:1px solid var(--color-pumice); border-radius:8px;">
@@ -54,7 +54,7 @@
                     <label class="font-display" style="display:block; margin-bottom:8px;">Selfie dengan KTP (JPG/PNG max 5MB)</label>
                     <input type="file" id="selfie_file" accept=".jpg,.jpeg,.png" required style="width:100%; padding:12px; border:1px solid var(--color-pumice); border-radius:8px;">
                 </div>
-                <div style="grid-column: span 2;">
+                <div class="col-span-full">
                     <label class="font-display" style="display:block; margin-bottom:8px;">Curriculum Vitae / CV (Opsional, PDF/DOC max 10MB)</label>
                     <input type="file" id="cv_file" accept=".pdf,.doc,.docx" style="width:100%; padding:12px; border:1px solid var(--color-pumice); border-radius:8px;">
                 </div>
@@ -118,7 +118,7 @@
 </div>
 
 <!-- Revenue Detail -->
-<div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+<div class="grid-2-cols" style="gap:16px;">
     <div class="card">
         <h3 class="font-display" style="font-size:22px; margin-bottom:20px; letter-spacing:0.02em;">PENAWARAN AKTIF</h3>
         <div id="quotation-list">

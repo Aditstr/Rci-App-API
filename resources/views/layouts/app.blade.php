@@ -49,7 +49,7 @@
 <!-- ── Footer ── -->
 <footer style="background-color: var(--color-obsidian); color: var(--color-chalk); padding: 64px 0 32px;">
     <div class="page-container">
-        <div style="display:grid; grid-template-columns: 2fr 1fr 1fr; gap: 48px; margin-bottom: 48px;">
+        <div class="grid-footer-cols" style="margin-bottom: 48px;">
             <div>
                 <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px;">
                     <div class="nav-logo-icon">R</div>

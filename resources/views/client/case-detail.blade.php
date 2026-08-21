@@ -18,7 +18,7 @@
 <div id="case-detail-loading" style="text-align:center;padding:80px;color:rgba(7,6,7,0.4);">Memuat detail kasus...</div>
 
 <div id="case-detail-content" style="display:none;">
-    <div style="display:grid; grid-template-columns:2fr 1fr; gap:24px; align-items:flex-start;">
+    <div class="grid-2-cols-aside" style="align-items:flex-start;">
         <!-- Main Info -->
         <div style="display:flex;flex-direction:column;gap:20px;">
             <div class="card">

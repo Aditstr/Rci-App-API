@@ -40,7 +40,7 @@
 
             <div>
                 <label style="font-size:13px;font-weight:500;display:block;margin-bottom:8px;">Jenis Kasus <span style="color:var(--color-ember);">*</span></label>
-                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+                <div class="grid-3-cols">
                     @foreach(['perdata'=>'⚖️ Perdata','pidana'=>'🔒 Pidana','tata_usaha'=>'📋 Tata Usaha'] as $val => $label)
                     <label style="display:flex;align-items:center;justify-content:center;gap:6px;padding:14px;border-radius:var(--radius-medium);border:1.5px solid var(--color-pumice);cursor:pointer;font-size:14px;font-weight:500;transition:all 0.15s;text-align:center;" class="case-type-opt" onclick="selectType('{{ $val }}', this)">
                         <input type="radio" name="case_type" value="{{ $val }}" style="display:none;">

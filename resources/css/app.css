@@ -576,9 +576,54 @@ body {
   .hero-grid {
     grid-template-columns: 1fr;
   }
+/* ── Grid Utilities ── */
+.grid-2-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-24);
 }
 
-/* ── Kanban Board ── */
+.grid-3-cols {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-8);
+}
+
+.grid-2-cols-aside {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--spacing-24);
+}
+
+.grid-aside-2-cols {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: var(--spacing-24);
+}
+
+.grid-footer-cols {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: var(--spacing-48);
+}
+
+@media (max-width: 900px) {
+  .grid-2-cols-aside,
+  .grid-aside-2-cols,
+  .grid-footer-cols {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .grid-2-cols {
+    grid-template-columns: 1fr;
+  }
+  .grid-3-cols {
+    grid-template-columns: 1fr;
+  }
+}
+
 .kanban-board {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -1524,4 +1569,8 @@ body {
     border-radius: 28px;
     gap: 24px;
   }
+}
+
+.col-span-full {
+  grid-column: 1 / -1;
 }

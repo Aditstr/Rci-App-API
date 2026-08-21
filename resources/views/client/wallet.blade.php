@@ -45,7 +45,7 @@
 <div id="topup-modal" style="display:none; position:fixed; inset:0; background:rgba(7,6,7,0.5); z-index:1000; align-items:center; justify-content:center;">
     <div class="card" style="width:100%;max-width:440px; margin:16px;">
         <h2 class="font-display text-heading" style="margin-bottom:20px;">TOP UP SALDO</h2>
-        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:20px;">
+        <div class="grid-3-cols" style="margin-bottom:20px;">
             @foreach([50000, 100000, 250000, 500000, 1000000, 2000000] as $amt)
             <button onclick="setTopupAmt({{ $amt }})" class="topup-preset" style="padding:12px; border-radius:var(--radius-medium); border:1.5px solid var(--color-pumice); background:var(--color-pumice); cursor:pointer; font-family:var(--font-dm-sans); font-weight:500; font-size:13px; transition:all 0.15s;">
                 Rp {{ number_format($amt, 0, ',', '.') }}

@@ -40,7 +40,7 @@
             <!-- Role Picker -->
             <div style="margin-bottom:20px;">
                 <label style="font-size:13px; font-weight:500; display:block; margin-bottom:10px;">Daftar sebagai</label>
-                <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px;" id="role-picker">
+                <div class="grid-3-cols" id="role-picker">
                     <button type="button" onclick="pickRole('client', this)" class="role-btn active" data-role="client"
                         style="padding:12px 8px; border-radius:var(--radius-medium); border:1.5px solid var(--color-ember); background:rgba(252,80,0,0.08); cursor:pointer; font-family:var(--font-dm-sans); font-weight:500; font-size:13px; text-align:center; transition:all 0.15s;">
                         👤<br>Klien

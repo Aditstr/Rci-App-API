@@ -36,7 +36,7 @@
     <p style="color:rgba(7,6,7,0.5); font-size:14px; margin-top:4px;">Kelola informasi akun dan preferensi Anda.</p>
 </div>
 
-<div style="display:grid; grid-template-columns:1fr 2fr; gap:24px; align-items:flex-start;">
+<div class="grid-aside-2-cols" style="align-items:flex-start;">
 
     <!-- Avatar Card -->
     <div class="card" style="text-align:center;">
