@@ -123,7 +123,7 @@ class CaseController extends Controller
                 'category'       => $mappedCategory,
                 'status'         => 'submitted',
                 'submitted_at'   => now(),
-                'is_marketplace' => true,
+                'is_marketplace' => \Illuminate\Support\Facades\DB::raw('true'),
             ]);
 
             return response()->json([
@@ -136,7 +136,7 @@ class CaseController extends Controller
             \Illuminate\Support\Facades\Log::error('Case store DB error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal menyimpan kasus: ' . $e->getMessage(),
+                'message' => 'Gagal menyimpan kasus. Silakan coba lagi.',
             ], 500);
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('Case store error: ' . $e->getMessage(), [
@@ -145,7 +145,7 @@ class CaseController extends Controller
             ]);
             return response()->json([
                 'success' => false,
-                'message' => 'Terjadi kesalahan: ' . $e->getMessage(),
+                'message' => 'Terjadi kesalahan sistem.',
             ], 500);
         }
     }

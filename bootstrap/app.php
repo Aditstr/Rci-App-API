@@ -80,8 +80,8 @@ return Application::configure(basePath: dirname(__DIR__))
 
                 return response()->json([
                     'success' => false,
-                    'message' => 'Terjadi kesalahan pada server: ' . $e->getMessage(),
-                    'error'   => $e->getMessage(),
+                    'message' => config('app.debug') ? 'Terjadi kesalahan: ' . $e->getMessage() : 'Terjadi kesalahan internal pada server.',
+                    'error'   => config('app.debug') ? $e->getMessage() : 'Internal Server Error',
                 ], 500);
             }
         });
