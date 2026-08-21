@@ -71,7 +71,9 @@ const statusColors = {
 window.onUserLoaded = function() {
     fetch('/api/v1/cases', { headers: { 'Authorization': 'Bearer '+token, 'Accept': 'application/json' }})
         .then(r => r.json()).then(d => {
-            allCases = d.data || d || [];
+            // d.data might be a paginated object {data: [...], links: ...} or direct array
+            allCases = (d.data && Array.isArray(d.data.data)) ? d.data.data : (d.data || d || []);
+            if (!Array.isArray(allCases)) allCases = [];
             renderCases(allCases);
         }).catch(() => {
             document.getElementById('cases-table').innerHTML = '<div style="text-align:center;padding:60px;color:rgba(7,6,7,0.4);">Gagal memuat kasus.</div>';
@@ -80,16 +82,21 @@ window.onUserLoaded = function() {
 
 function renderCases(cases) {
     const el = document.getElementById('cases-table');
-    if (!cases.length) {
+    if (!cases || !cases.length) {
         el.innerHTML = '<div style="text-align:center;padding:60px;color:rgba(7,6,7,0.4);font-size:14px;">Tidak ada kasus. <a href="/client/cases/new" style="color:var(--color-ember);">Buat kasus pertama →</a></div>';
         return;
     }
     el.innerHTML = cases.map(c => {
-        const s = statusColors[c.status] || {bg:'#e2e2df',color:'#070607',label:c.status};
+        const statKey = (c.status || '').toUpperCase();
+        // Fallback for new lowercase statuses like 'submitted'
+        if (statKey === 'SUBMITTED') c.status = 'PENDING'; 
+        const mappedKey = statKey === 'SUBMITTED' ? 'PENDING' : statKey;
+
+        const s = statusColors[mappedKey] || {bg:'#e2e2df',color:'#070607',label:c.status};
         return `<div style="display:flex;align-items:center;gap:16px;padding:18px 0;border-bottom:1.5px dotted var(--color-pumice);flex-wrap:wrap;">
             <div style="flex:1;min-width:200px;">
                 <p style="font-weight:500;font-size:15px;margin-bottom:4px;">${c.title || 'Kasus #'+c.id}</p>
-                <p style="font-size:12px;color:rgba(7,6,7,0.45);">${c.case_type?.replace('_',' ') || 'Umum'} · Dibuat ${new Date(c.created_at).toLocaleDateString('id-ID')}</p>
+                <p style="font-size:12px;color:rgba(7,6,7,0.45);">${c.category?.replace('_',' ') || 'Umum'} · Dibuat ${new Date(c.created_at).toLocaleDateString('id-ID')}</p>
             </div>
             <span class="tag" style="background:${s.bg};color:${s.color};">${s.label}</span>
             <a href="/client/cases/${c.id}" style="color:var(--color-ember);text-decoration:none;font-size:14px;font-weight:500;white-space:nowrap;">Lihat Detail →</a>
@@ -100,7 +107,12 @@ function renderCases(cases) {
 function filterStatus(status, btn) {
     document.querySelectorAll('.status-tab').forEach(b => { b.style.background='var(--color-sulfur)'; b.style.color='var(--color-obsidian)'; });
     btn.style.background = 'var(--color-ember)'; btn.style.color = 'white';
-    renderCases(status === 'all' ? allCases : allCases.filter(c => c.status === status));
+    
+    renderCases(status === 'all' ? allCases : allCases.filter(c => {
+        let s = (c.status || '').toUpperCase();
+        if (s === 'SUBMITTED') s = 'PENDING';
+        return s === status;
+    }));
 }
 window.filterStatus = filterStatus;
 })();
