@@ -69,35 +69,40 @@ class CaseController extends Controller
     private function mapCategory(string $category): string
     {
         $map = [
-            'hukum pidana'          => 'criminal',
-            'pidana'                => 'criminal',
-            'criminal'              => 'criminal',
-            'hukum perdata'         => 'general',
+            // Frontend values (case_type)
             'perdata'               => 'general',
+            'pidana'                => 'criminal',
+            'tata_usaha'            => 'corporate',
+            'tata usaha'            => 'corporate',
+            // English values (direct pass)
+            'criminal'              => 'criminal',
+            'general'               => 'general',
+            'family'                => 'family',
+            'corporate'             => 'corporate',
+            'property'              => 'property',
+            'labor'                 => 'labor',
+            'immigration'           => 'immigration',
+            'intellectual_property' => 'intellectual_property',
+            'tax'                   => 'tax',
+            // Indonesian labels
+            'hukum pidana'          => 'criminal',
+            'hukum perdata'         => 'general',
             'hukum keluarga'        => 'family',
             'keluarga'              => 'family',
-            'family'                => 'family',
             'hukum perusahaan'      => 'corporate',
             'perusahaan'            => 'corporate',
             'korporasi'             => 'corporate',
-            'corporate'             => 'corporate',
             'hukum properti'        => 'property',
             'properti'              => 'property',
-            'property'              => 'property',
             'hukum ketenagakerjaan' => 'labor',
             'ketenagakerjaan'       => 'labor',
-            'labor'                 => 'labor',
             'hukum imigrasi'        => 'immigration',
             'imigrasi'              => 'immigration',
-            'immigration'           => 'immigration',
             'hukum kekayaan intelektual' => 'intellectual_property',
             'kekayaan intelektual'  => 'intellectual_property',
-            'intellectual_property' => 'intellectual_property',
             'hukum pajak'           => 'tax',
             'pajak'                 => 'tax',
-            'tax'                   => 'tax',
             'umum'                  => 'general',
-            'general'               => 'general',
         ];
 
         return $map[strtolower(trim($category))] ?? 'general';
@@ -105,25 +110,44 @@ class CaseController extends Controller
 
     public function store(StoreCaseRequest $request): JsonResponse
     {
+        try {
+            $mappedCategory = $this->mapCategory(
+                $request->input('category', $request->input('case_type', 'general'))
+            );
 
-        $mappedCategory = $this->mapCategory($request->input('category'));
+            $case = LegalCase::create([
+                'case_number'    => LegalCase::generateCaseNumber(),
+                'client_id'      => $request->user()->id,
+                'title'          => $request->input('title'),
+                'description'    => $request->input('description'),
+                'category'       => $mappedCategory,
+                'status'         => 'submitted',
+                'submitted_at'   => now(),
+                'is_marketplace' => true,
+            ]);
 
-        $case = LegalCase::create([
-            'case_number' => LegalCase::generateCaseNumber(),
-            'client_id'   => $request->user()->id,
-            'title'       => $request->input('title'),
-            'description' => $request->input('description'),
-            'category'    => $mappedCategory,
-            'status'      => 'submitted',
-            'submitted_at'=> now(),
-            'is_marketplace' => true,
-        ]);
+            return response()->json([
+                'success' => true,
+                'message' => 'Kasus berhasil diajukan.',
+                'data'    => new LegalCaseResource($case),
+            ], 201);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Kasus berhasil diajukan.',
-            'data'    => new LegalCaseResource($case),
-        ], 201);
+        } catch (\Illuminate\Database\QueryException $e) {
+            \Illuminate\Support\Facades\Log::error('Case store DB error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menyimpan kasus: ' . $e->getMessage(),
+            ], 500);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Case store error: ' . $e->getMessage(), [
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     // ──────────────────────────────────────────────

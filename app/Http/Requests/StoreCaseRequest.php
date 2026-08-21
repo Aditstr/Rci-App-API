@@ -13,6 +13,18 @@ class StoreCaseRequest extends FormRequest
         return true;
     }
 
+    /**
+     * Normalize field names before validation.
+     * Frontend sends 'case_type', backend uses 'category'.
+     */
+    protected function prepareForValidation(): void
+    {
+        // Accept 'case_type' from frontend as alias for 'category'
+        if ($this->has('case_type') && !$this->has('category')) {
+            $this->merge(['category' => $this->input('case_type')]);
+        }
+    }
+
     public function rules(): array
     {
         return [
@@ -28,7 +40,7 @@ class StoreCaseRequest extends FormRequest
             'title.required'       => 'Judul kasus wajib diisi.',
             'title.max'            => 'Judul kasus maksimal 255 karakter.',
             'description.required' => 'Deskripsi kasus wajib diisi.',
-            'category.required'    => 'Kategori kasus wajib dipilih.',
+            'category.required'    => 'Jenis kasus wajib dipilih.',
         ];
     }
 }
