@@ -246,13 +246,13 @@ class ExpertVerificationResource extends Resource
                     ->action(function (ExpertProfile $record): void {
                         $record->update([
                             'verification_status' => 'approved',
-                            'is_verified'         => true,
+                            'is_verified'         => \Illuminate\Support\Facades\DB::raw('true'),
                             'rejection_reason'    => null,
                             'verified_at'         => now(),
                         ]);
 
                         // Update user's is_verified flag (forceFill since not mass-assignable)
-                        $record->user->forceFill(['is_verified' => true])->save();
+                        $record->user->forceFill(['is_verified' => \Illuminate\Support\Facades\DB::raw('true')])->save();
 
                         // Send email notification
                         $record->user->notify(new ExpertApprovedNotification($record));
