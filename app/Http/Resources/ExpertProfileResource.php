@@ -33,8 +33,8 @@ class ExpertProfileResource extends JsonResource
             'created_at'             => $this->created_at,
 
             // Document paths are intentionally excluded from public API.
-            // ktp_path, ijazah_path, license_card_path, cv_path, selfie_path
-            // are only visible in Filament admin panel.
+            // But frontend needs to know if they have uploaded them to hide the onboarding form.
+            'has_documents'          => !empty($this->ktp_path) && !empty($this->ijazah_path),
 
             // Only include rejection_reason if status is rejected
             'rejection_reason' => $this->when(

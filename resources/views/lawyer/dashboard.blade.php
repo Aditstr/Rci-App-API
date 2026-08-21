@@ -145,7 +145,9 @@ window.onUserLoaded = function(user) {
     const expert = user.expert_profile;
     
     // Alur Onboarding / Pending
-    if (!expert || !expert.ktp_path || !expert.ijazah_path || !expert.license_card_path || !expert.selfie_path) {
+    if (expert.verification_status === 'approved') {
+        document.getElementById('dashboard-container').style.display = 'block';
+    } else if (!expert || !expert.has_documents) {
         document.getElementById('onboarding-container').style.display = 'block';
         fetchSOP();
     } else if (expert.verification_status === 'pending' || expert.verification_status === 'rejected') {
