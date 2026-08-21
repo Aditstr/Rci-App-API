@@ -30,6 +30,9 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser
         'phone',
         'avatar_url',
         'google_id',
+        'email_verified_at',
+        'is_verified',
+        'is_active',
     ];
 
     /**
@@ -128,6 +131,15 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser
     // ──────────────────────────────────────────────
     // Helper Methods
     // ──────────────────────────────────────────────
+
+    /**
+     * Determine if the user has verified their email address.
+     * Google OAuth users are automatically considered verified.
+     */
+    public function hasVerifiedEmail(): bool
+    {
+        return ! is_null($this->email_verified_at) || ! is_null($this->google_id);
+    }
 
     public function isAdmin(): bool
     {

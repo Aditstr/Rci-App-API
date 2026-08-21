@@ -24,7 +24,7 @@ class UserResource extends JsonResource
             'role'        => $this->role,
             'phone'       => $this->phone,
             'avatar_url'  => $this->avatar_url,
-            'is_verified' => $this->is_verified,
+            'is_verified' => $this->hasVerifiedEmail(),
             'is_active'   => $this->is_active,
             'created_at'  => $this->created_at,
 
