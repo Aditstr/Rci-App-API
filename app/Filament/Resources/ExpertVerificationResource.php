@@ -14,6 +14,8 @@ use Filament\Tables\Table;
 use Filament\Tables\Actions\Action;
 use Filament\Notifications\Notification as FilamentNotification;
 use Illuminate\Support\Facades\Storage;
+use Filament\Infolists;
+use Filament\Infolists\Infolist;
 
 class ExpertVerificationResource extends Resource
 {
@@ -36,75 +38,103 @@ class ExpertVerificationResource extends Resource
         return 'warning';
     }
 
-    public static function form(Form $form): Form
+    public static function infolist(Infolist $infolist): Infolist
     {
-        return $form
+        return $infolist
             ->schema([
-                Forms\Components\Section::make('Informasi Pengguna')
+                Infolists\Components\Section::make('Informasi Pengguna')
                     ->schema([
-                        Forms\Components\TextInput::make('user.name')
+                        Infolists\Components\TextEntry::make('user.name')
                             ->label('Nama Lengkap')
-                            ->disabled(),
-                        Forms\Components\TextInput::make('user.email')
+                            ->default('—'),
+                        Infolists\Components\TextEntry::make('user.email')
                             ->label('Email')
-                            ->disabled(),
-                        Forms\Components\TextInput::make('user.role')
+                            ->default('—'),
+                        Infolists\Components\TextEntry::make('user.role')
                             ->label('Role')
-                            ->disabled(),
+                            ->badge()
+                            ->color(fn (string $state): string => match ($state) {
+                                'lawyer' => 'info',
+                                'paralegal' => 'success',
+                                default => 'gray',
+                            }),
                     ])->columns(3),
 
-                Forms\Components\Section::make('Dokumen yang Diupload')
+                Infolists\Components\Section::make('Dokumen yang Diupload')
                     ->schema([
-                        Forms\Components\Placeholder::make('ktp_preview')
+                        Infolists\Components\ImageEntry::make('ktp_path')
                             ->label('KTP')
-                            ->content(fn (ExpertProfile $record): string =>
-                                $record->ktp_path
-                                    ? '📄 ' . basename($record->ktp_path)
-                                    : '— Tidak ada'
-                            ),
-                        Forms\Components\Placeholder::make('ijazah_preview')
+                            ->hidden(fn ($record) => empty($record->ktp_path))
+                            ->height(200)
+                            ->extraImgAttributes(['style' => 'object-fit: contain;']),
+                        Infolists\Components\TextEntry::make('ktp_path_empty')
+                            ->label('KTP')
+                            ->default('— Tidak ada')
+                            ->hidden(fn ($record) => !empty($record->ktp_path)),
+                        
+                        Infolists\Components\ImageEntry::make('ijazah_path')
                             ->label('Ijazah')
-                            ->content(fn (ExpertProfile $record): string =>
-                                $record->ijazah_path
-                                    ? '📄 ' . basename($record->ijazah_path)
-                                    : '— Tidak ada'
-                            ),
-                        Forms\Components\Placeholder::make('license_preview')
+                            ->hidden(fn ($record) => empty($record->ijazah_path))
+                            ->height(200)
+                            ->extraImgAttributes(['style' => 'object-fit: contain;']),
+                        Infolists\Components\TextEntry::make('ijazah_path_empty')
+                            ->label('Ijazah')
+                            ->default('— Tidak ada')
+                            ->hidden(fn ($record) => !empty($record->ijazah_path)),
+
+                        Infolists\Components\ImageEntry::make('license_card_path')
                             ->label('Kartu Izin Praktik (PERADI)')
-                            ->content(fn (ExpertProfile $record): string =>
-                                $record->license_card_path
-                                    ? '📄 ' . basename($record->license_card_path)
-                                    : '— Tidak ada'
-                            ),
-                        Forms\Components\Placeholder::make('selfie_preview')
+                            ->hidden(fn ($record) => empty($record->license_card_path))
+                            ->height(200)
+                            ->extraImgAttributes(['style' => 'object-fit: contain;']),
+                        Infolists\Components\TextEntry::make('license_card_empty')
+                            ->label('Kartu Izin Praktik (PERADI)')
+                            ->default('— Tidak ada')
+                            ->hidden(fn ($record) => !empty($record->license_card_path)),
+
+                        Infolists\Components\ImageEntry::make('selfie_path')
                             ->label('Foto Selfie')
-                            ->content(fn (ExpertProfile $record): string =>
-                                $record->selfie_path
-                                    ? '📄 ' . basename($record->selfie_path)
-                                    : '— Tidak ada'
-                            ),
-                        Forms\Components\Placeholder::make('cv_preview')
+                            ->hidden(fn ($record) => empty($record->selfie_path))
+                            ->height(200)
+                            ->extraImgAttributes(['style' => 'object-fit: contain;']),
+                        Infolists\Components\TextEntry::make('selfie_path_empty')
+                            ->label('Foto Selfie')
+                            ->default('— Tidak ada')
+                            ->hidden(fn ($record) => !empty($record->selfie_path)),
+
+                        Infolists\Components\TextEntry::make('cv_path')
                             ->label('CV / Resume')
-                            ->content(fn (ExpertProfile $record): string =>
-                                $record->cv_path
-                                    ? '📄 ' . basename($record->cv_path)
-                                    : '— Tidak ada'
-                            ),
+                            ->formatStateUsing(fn ($state) => $state ? basename($state) : '— Tidak ada')
+                            ->url(fn ($record) => $record->cv_path ? route('expert.document.download', ['profile' => $record->id, 'type' => 'cv']) : null, true)
+                            ->color('primary')
+                            ->icon('heroicon-o-document-arrow-down'),
                     ])->columns(2),
 
-                Forms\Components\Section::make('Status Verifikasi')
+                Infolists\Components\Section::make('Status Verifikasi')
                     ->schema([
-                        Forms\Components\TextInput::make('verification_status')
+                        Infolists\Components\TextEntry::make('verification_status')
                             ->label('Status')
-                            ->disabled(),
-                        Forms\Components\Textarea::make('rejection_reason')
+                            ->badge()
+                            ->color(fn (string $state): string => match ($state) {
+                                'pending'  => 'warning',
+                                'approved' => 'success',
+                                'rejected' => 'danger',
+                                default    => 'gray',
+                            }),
+                        Infolists\Components\TextEntry::make('rejection_reason')
                             ->label('Alasan Penolakan')
-                            ->disabled(),
-                        Forms\Components\DateTimePicker::make('verified_at')
+                            ->default('—'),
+                        Infolists\Components\TextEntry::make('verified_at')
                             ->label('Tanggal Verifikasi')
-                            ->disabled(),
-                    ])->columns(2),
+                            ->dateTime()
+                            ->default('—'),
+                    ])->columns(3),
             ]);
+    }
+
+    public static function form(Form $form): Form
+    {
+        return $form->schema([]); // Unused since we have infolist and no create/edit routes
     }
 
     public static function table(Table $table): Table
