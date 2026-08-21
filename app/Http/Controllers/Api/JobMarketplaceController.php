@@ -19,7 +19,7 @@ class JobMarketplaceController extends Controller
     {
         $query = LegalCase::with(['client:id,name'])
                           ->whereNull('expert_id')
-                          ->where('is_marketplace', true)
+                          ->whereRaw('is_marketplace = true')
                           ->orderByDesc('created_at');
 
         // Optional filter: ?category=Hukum Perdata
@@ -41,7 +41,7 @@ class JobMarketplaceController extends Controller
      */
     public function apply(Request $request, $case_id): JsonResponse
     {
-        $case = LegalCase::where('is_marketplace', true)
+        $case = LegalCase::whereRaw('is_marketplace = true')
             ->whereNull('expert_id')
             ->findOrFail($case_id);
 
@@ -63,7 +63,7 @@ class JobMarketplaceController extends Controller
         $case->expert_id = $user->id;
         $case->status = 'assigned';
         $case->assigned_at = now();
-        $case->is_marketplace = false; // Karena sudah diambil
+        $case->is_marketplace = \Illuminate\Support\Facades\DB::raw('false'); // Karena sudah diambil
         $case->save();
 
         // Eager load client to avoid N+1 lazy loading

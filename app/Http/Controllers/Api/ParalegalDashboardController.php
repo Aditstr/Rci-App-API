@@ -219,7 +219,7 @@ class ParalegalDashboardController extends Controller
                     'status'         => 'submitted', // awal submitted, akan menjadi active saat funds di-lock
                     'submitted_at'   => now(),
                     'assigned_at'    => now(),
-                    'is_marketplace' => false, // langsung dipegang oleh agen, tidak masuk marketplace
+                    'is_marketplace' => \Illuminate\Support\Facades\DB::raw('false'), // langsung dipegang oleh agen, tidak masuk marketplace
                 ]);
 
                 // 4. Lock funds in escrow from the PARALEGAL's wallet
