@@ -70,6 +70,7 @@
 
 @push('scripts')
 <script>
+(function() {
 const token = localStorage.getItem('rci_token');
 
 function selectType(val, el) {
@@ -112,5 +113,7 @@ document.getElementById('new-case-form').addEventListener('submit', async functi
         btn.textContent = 'Ajukan Kasus'; btn.disabled = false;
     }
 });
+window.selectType = selectType;
+})();
 </script>
 @endpush
