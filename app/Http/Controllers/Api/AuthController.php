@@ -200,9 +200,13 @@ class AuthController extends Controller
      *
      * GET /api/v1/auth/google
      */
-    public function redirectToGoogle()
+    public function redirectToGoogle(Request $request)
     {
-        return Socialite::driver('google')->stateless()->redirect();
+        $role = $request->query('role', 'client');
+        return Socialite::driver('google')
+            ->stateless()
+            ->with(['state' => base64_encode(json_encode(['role' => $role]))])
+            ->redirect();
     }
 
     /**
@@ -217,6 +221,15 @@ class AuthController extends Controller
             
             $user = User::where('email', $googleUser->getEmail())->first();
 
+            // Ambil role dari parameter state jika ada
+            $intendedRole = 'client';
+            if ($request->has('state')) {
+                $stateData = json_decode(base64_decode($request->query('state')), true);
+                if (is_array($stateData) && isset($stateData['role']) && in_array($stateData['role'], ['client', 'paralegal', 'lawyer'])) {
+                    $intendedRole = $stateData['role'];
+                }
+            }
+
             if (!$user) {
                 // Daftar user baru via Google — langsung terverifikasi
                 $user = User::create([
@@ -224,7 +237,7 @@ class AuthController extends Controller
                     'email'             => $googleUser->getEmail(),
                     'google_id'         => $googleUser->getId(),
                     'avatar_url'        => $googleUser->getAvatar(),
-                    'role'              => 'client',
+                    'role'              => $intendedRole,
                     'email_verified_at' => now(), // Google sudah verifikasi email
                     'is_verified'       => true,
                     // password remains null
@@ -235,6 +248,15 @@ class AuthController extends Controller
                     ['user_id' => $user->id],
                     ['balance' => 0]
                 );
+
+                // Create expert profile if role is paralegal or lawyer
+                if (in_array($intendedRole, ['paralegal', 'lawyer'])) {
+                    ExpertProfile::create([
+                        'user_id'             => $user->id,
+                        'license_number'      => 'PENDING-' . \Illuminate\Support\Str::uuid()->toString(),
+                        'verification_status' => 'pending',
+                    ]);
+                }
 
                 // Tidak perlu kirim email verifikasi — Google sudah verifikasi
                 // event(new Registered($user));
