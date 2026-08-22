@@ -111,6 +111,16 @@ class CaseController extends Controller
     public function store(StoreCaseRequest $request): JsonResponse
     {
         try {
+            $user = $request->user();
+            
+            // Periksa ketersediaan saldo untuk biaya pendaftaran kasus
+            if ($user->wallet->balance < 20000) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Saldo tidak mencukupi untuk mengajukan kasus. Biaya pendaftaran adalah Rp20.000. Silakan top up dompet Anda terlebih dahulu.'
+                ], 400);
+            }
+
             $mappedCategory = $this->mapCategory(
                 $request->input('category', $request->input('case_type', 'general'))
             );
@@ -130,6 +140,21 @@ class CaseController extends Controller
                 'is_marketplace' => \Illuminate\Support\Facades\DB::raw('true')
             ]);
             $case->refresh();
+
+            // Potong saldo Klien
+            $user->wallet->balance -= 20000;
+            $user->wallet->save();
+
+            // Catat transaksi
+            \App\Models\WalletTransaction::create([
+                'wallet_id' => $user->wallet->id,
+                'amount' => -20000,
+                'type' => 'payment',
+                'reference_id' => $case->id,
+                'reference_type' => get_class($case),
+                'status' => 'completed',
+                'description' => 'Biaya pengajuan kasus #' . $case->id
+            ]);
 
             return response()->json([
                 'success' => true,

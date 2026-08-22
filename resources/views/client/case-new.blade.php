@@ -60,8 +60,16 @@
                 <strong style="color:var(--color-plasma-violet);">💡 Tips:</strong> Sertakan: tanggal kejadian, pihak yang terlibat, kronologi singkat, dan dokumen yang Anda miliki. Identitas dan detail pribadi Anda terlindungi kerahasiaan klien-advokat.
             </div>
 
-            <button type="submit" class="btn-primary" style="width:100%;padding:18px;font-size:16px;" id="submit-case-btn">
-                Ajukan Kasus
+            <div style="background:rgba(252,80,0,0.08);border:1.5px solid var(--color-ember);border-radius:var(--radius-medium);padding:16px;font-size:13px;color:var(--color-obsidian);line-height:1.6;display:flex;align-items:flex-start;gap:12px;">
+                <span style="font-size:18px;">💳</span>
+                <div>
+                    <strong style="display:block;margin-bottom:4px;color:var(--color-ember);">Biaya Pengajuan: Rp20.000</strong>
+                    Pengajuan kasus ke Job Marketplace akan memotong saldo dompet Anda sebesar Rp20.000. Dana ini akan diteruskan ke Paralegal yang mengambil kasus Anda sebagai biaya administrasi awal.
+                </div>
+            </div>
+
+            <button type="submit" class="btn-primary" style="width:100%;padding:18px;font-size:16px;display:flex;justify-content:center;align-items:center;gap:8px;" id="submit-case-btn">
+                Ajukan Kasus & Bayar Rp20.000
             </button>
         </form>
     </div>

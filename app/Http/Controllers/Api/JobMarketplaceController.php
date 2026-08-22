@@ -67,9 +67,22 @@ class JobMarketplaceController extends Controller
             'assigned_at' => now(),
             'is_marketplace' => \Illuminate\Support\Facades\DB::raw('false')
         ]);
-        
         // Refresh the model to get the updated values
         $case->refresh();
+
+        // Tambahkan pendapatan Rp20.000 ke dompet Paralegal
+        $user->wallet->balance += 20000;
+        $user->wallet->save();
+
+        \App\Models\WalletTransaction::create([
+            'wallet_id' => $user->wallet->id,
+            'amount' => 20000,
+            'type' => 'earning',
+            'reference_id' => $case->id,
+            'reference_type' => get_class($case),
+            'status' => 'completed',
+            'description' => 'Pendapatan ambil kasus baru #' . $case->id
+        ]);
 
         // Eager load client to avoid N+1 lazy loading
         $case->load('client');
