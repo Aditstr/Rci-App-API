@@ -92,6 +92,23 @@ class ParalegalDashboardController extends Controller
     }
 
     /**
+     * Tampilkan detail kasus.
+     * GET /api/paralegal/cases/{id}
+     */
+    public function show(Request $request, $id): JsonResponse
+    {
+        $case = LegalCase::where('id', $id)
+            ->where('expert_id', $request->user()->id)
+            ->with(['client', 'documents'])
+            ->firstOrFail();
+            
+        return response()->json([
+            'success' => true,
+            'data'    => new LegalCaseResource($case)
+        ]);
+    }
+
+    /**
      * Memperbarui status / memindahkan kartu di Board Kanban
      * 
      * POST /api/paralegal/cases/{id}/status

@@ -35,6 +35,7 @@ Route::prefix('paralegal')->group(function () {
     Route::get('/',             fn() => view('paralegal.dashboard'));
     Route::get('/kanban',       fn() => view('paralegal.dashboard'));
     Route::get('/marketplace',  fn() => view('paralegal.marketplace'));
+    Route::get('/cases/{id}',   fn() => view('paralegal.case-detail'));
 });
 
 // ─── Lawyer Dashboard ─────────────────────────────────

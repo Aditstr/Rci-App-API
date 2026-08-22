@@ -186,6 +186,7 @@ Route::prefix('v1')->group(function () {
         // Stats & Kanban Board
         Route::get('/dashboard/stats', [ParalegalDashboardController::class, 'stats'])->name('api.v1.paralegal.stats');
         Route::get('/cases',           [ParalegalDashboardController::class, 'cases'])->name('api.v1.paralegal.cases');
+        Route::get('/cases/{id}',      [ParalegalDashboardController::class, 'show'])->name('api.v1.paralegal.cases.show');
         Route::post('/cases',          [ParalegalDashboardController::class, 'storeCase'])->name('api.v1.paralegal.cases.store');
         Route::post('/cases/{id}/status', [ParalegalDashboardController::class, 'updateStatus'])->name('api.v1.paralegal.cases.updateStatus');
         Route::post('/cases/{id}/escalate', [ParalegalDashboardController::class, 'escalate'])->name('api.v1.paralegal.cases.escalate');

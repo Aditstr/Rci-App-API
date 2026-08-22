@@ -115,7 +115,7 @@
                 </div>
                 <span class="tag" id="count-pending">0</span>
             </div>
-            <div class="kanban-cards" id="cards-pending" ondragover="event.preventDefault()" ondrop="dropCard(event,'PENDING')"></div>
+            <div class="kanban-cards" id="cards-pending"></div>
         </div>
 
         <div class="kanban-column" id="col-inprogress">
@@ -126,7 +126,7 @@
                 </div>
                 <span class="tag" style="background:#524ae9;color:white;" id="count-inprogress">0</span>
             </div>
-            <div class="kanban-cards" id="cards-inprogress" ondragover="event.preventDefault()" ondrop="dropCard(event,'IN_PROGRESS')"></div>
+            <div class="kanban-cards" id="cards-inprogress"></div>
         </div>
 
         <div class="kanban-column" id="col-onhold">
@@ -137,7 +137,7 @@
                 </div>
                 <span class="tag" style="background:var(--color-ember);color:white;" id="count-onhold">0</span>
             </div>
-            <div class="kanban-cards" id="cards-onhold" ondragover="event.preventDefault()" ondrop="dropCard(event,'ON_HOLD')"></div>
+            <div class="kanban-cards" id="cards-onhold"></div>
         </div>
     </div>
 </div>
@@ -281,36 +281,44 @@ function kanbanCard(c) {
     const typeColors = { perdata:'#f5f28e', pidana:'#fc5000', tata_usaha:'#524ae9' };
     const bg = typeColors[c.case_type] || '#e2e2df';
     const color = c.case_type === 'pidana' || c.case_type === 'tata_usaha' ? '#fff' : '#070607';
-    return `<div class="kanban-card" draggable="true" ondragstart="dragStart(event,${c.id})" id="case-${c.id}">
+    
+    let actionButtons = '';
+    const status = (c.status || '').toUpperCase();
+    if (status === 'ASSIGNED' || status === 'PENDING') {
+        actionButtons += `<button onclick="updateStatusManual(${c.id}, 'in_progress')" style="padding:6px 12px;border-radius:var(--radius-pills);border:none;background:var(--color-obsidian);color:white;cursor:pointer;font-size:11px;font-family:var(--font-dm-sans);font-weight:600;">▶ Mulai Proses</button>`;
+    } else if (status === 'IN_PROGRESS' || status === 'REVIEWING') {
+        actionButtons += `<button onclick="updateStatusManual(${c.id}, 'on_hold')" style="padding:6px 12px;border-radius:var(--radius-pills);border:1.5px solid var(--color-obsidian);background:none;cursor:pointer;font-size:11px;font-family:var(--font-dm-sans);font-weight:600;">⏸ Tunda</button>`;
+    } else if (status === 'ON_HOLD') {
+        actionButtons += `<button onclick="updateStatusManual(${c.id}, 'in_progress')" style="padding:6px 12px;border-radius:var(--radius-pills);border:none;background:var(--color-obsidian);color:white;cursor:pointer;font-size:11px;font-family:var(--font-dm-sans);font-weight:600;">▶ Lanjutkan</button>`;
+    }
+    actionButtons += `<button onclick="escalateCase(${c.id})" style="padding:6px 12px;border-radius:var(--radius-pills);border:1.5px solid var(--color-ember);background:none;color:var(--color-ember);cursor:pointer;font-size:11px;font-family:var(--font-dm-sans);font-weight:600;">⬆ Eskalasi</button>`;
+
+    return `<div class="kanban-card" id="case-${c.id}">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px;">
             <span class="tag" style="background:${bg};color:${color};font-size:11px;">${(c.case_type||'umum').replace('_',' ')}</span>
             <span style="font-size:11px;color:rgba(7,6,7,0.4);">#${c.id}</span>
         </div>
         <p style="font-weight:500;font-size:14px;margin-bottom:6px;line-height:1.4;">${c.title || c.description?.substring(0,50) || 'Kasus #'+c.id}</p>
         <p style="font-size:12px;color:rgba(7,6,7,0.45);">${new Date(c.created_at).toLocaleDateString('id-ID')}</p>
-        <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap;">
-            <button onclick="escalateCase(${c.id})" style="padding:4px 10px;border-radius:var(--radius-pills);border:1.5px solid var(--color-obsidian);background:none;cursor:pointer;font-size:11px;font-family:var(--font-dm-sans);font-weight:500;transition:background 0.15s;" onmouseover="this.style.background='var(--color-pumice)'" onmouseout="this.style.background='none'">⬆ Eskalasi</button>
+        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
+            ${actionButtons}
+        </div>
+        <div style="margin-top:12px; border-top:1px dashed rgba(7,6,7,0.1); padding-top:12px;">
+            <a href="/paralegal/cases/${c.id}" style="display:inline-block; font-size:12px; color:var(--color-plasma-violet); text-decoration:none; font-weight:600;">Buka Ruang Kerja &rarr;</a>
         </div>
     </div>`;
 }
 
-function dragStart(e, id) { draggingId = id; e.dataTransfer.effectAllowed = 'move'; }
-
-function dropCard(e, newStatus) {
-    e.preventDefault();
-    if (!draggingId) return;
-    fetch(`/api/v1/paralegal/cases/${draggingId}/status`, {
+function updateStatusManual(id, newStatus) {
+    fetch(`/api/v1/paralegal/cases/${id}/status`, {
         method: 'POST',
         headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json', 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus })
     }).then(r => {
         if (!r.ok) throw new Error('Gagal update status');
-        const c = allCases.find(x => x.id == draggingId);
-        if (c) c.status = newStatus;
-        renderKanban();
         showToast('Status kasus diperbarui!');
+        loadKanban(); // Reload dari server
     }).catch(err => showToast(err.message, 'error'));
-    draggingId = null;
 }
 
 function escalateCase(id) {
