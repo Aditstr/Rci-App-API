@@ -21,22 +21,29 @@ class ChatController extends Controller
      */
     public function index(Request $request, int $caseId): JsonResponse
     {
-        $case = LegalCase::findOrFail($caseId);
-        $user = $request->user();
+        try {
+            $case = LegalCase::findOrFail($caseId);
+            $user = $request->user();
 
-        Gate::authorize('message', $case);
+            Gate::authorize('message', $case);
 
-        // Fetch messages with sender info (name, role)
-        // Adjust the selected fields based on your User model definition
-        $messages = ChatMessage::with(['sender:id,name,role'])
-            ->where('case_id', $case->id)
-            ->orderBy('created_at', 'asc')
-            ->cursorPaginate(50);
+            $messages = ChatMessage::with(['sender:id,name,role'])
+                ->where('case_id', $case->id)
+                ->orderBy('created_at', 'asc')
+                ->get();
 
-        return response()->json([
-            'success' => true,
-            'data'    => ChatMessageResource::collection($messages)->response()->getData(true),
-        ]);
+            return response()->json([
+                'success' => true,
+                'data'    => ChatMessageResource::collection($messages),
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'error'   => $e->getMessage(),
+                'file'    => $e->getFile(),
+                'line'    => $e->getLine()
+            ], 500);
+        }
     }
 
     /**
@@ -46,37 +53,48 @@ class ChatController extends Controller
      */
     public function store(Request $request, int $caseId): JsonResponse
     {
-        $case = LegalCase::findOrFail($caseId);
-        $user = $request->user();
+        try {
+            $case = LegalCase::findOrFail($caseId);
+            $user = $request->user();
 
-        Gate::authorize('message', $case);
+            Gate::authorize('message', $case);
 
-        $validated = $request->validate([
-            'message'     => ['required', 'string', 'max:5000'],
-            'attachments' => ['nullable', 'array', 'max:5'], // Optional: allow max 5 attachments
-            'attachments.*'=> ['string', 'url'] // Expected as array of URLs (from prior upload) for simplicity
-        ]);
+            $validated = $request->validate([
+                'message'     => ['required', 'string', 'max:5000'],
+                'attachments' => ['nullable', 'array', 'max:5'], // Optional: allow max 5 attachments
+                'attachments.*'=> ['string', 'url'] // Expected as array of URLs (from prior upload) for simplicity
+            ]);
 
-        $chatMessage = ChatMessage::create([
-            'case_id'     => $case->id,
-            'sender_id'   => $user->id,
-            'message'     => $validated['message'],
-            'attachments' => $validated['attachments'] ?? [],
-            'is_read'     => false,
-            // 'read_at' => null // Will be handled dynamically later
-        ]);
+            $chatMessage = ChatMessage::create([
+                'case_id'     => $case->id,
+                'sender_id'   => $user->id,
+                'message'     => $validated['message'],
+                'attachments' => $validated['attachments'] ?? [],
+                'is_read'     => false,
+            ]);
 
-        // Eager load the sender detail for immediate response consistency
-        $chatMessage->load('sender:id,name,role');
+            $chatMessage->load('sender:id,name,role');
 
-        // Broadcast the message event
-        \App\Events\ChatMessageSent::dispatch($chatMessage);
+            try {
+                \App\Events\ChatMessageSent::dispatch($chatMessage);
+            } catch (\Exception $e) {
+                // Log broadcasting error but don't fail the message creation
+                \Illuminate\Support\Facades\Log::error("Broadcasting failed: " . $e->getMessage());
+            }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Message sent successfully.',
-            'data'    => new ChatMessageResource($chatMessage),
-        ], 201);
+            return response()->json([
+                'success' => true,
+                'message' => 'Message sent successfully.',
+                'data'    => new ChatMessageResource($chatMessage),
+            ], 201);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'error'   => $e->getMessage(),
+                'file'    => $e->getFile(),
+                'line'    => $e->getLine()
+            ], 500);
+        }
     }
 
     /**
