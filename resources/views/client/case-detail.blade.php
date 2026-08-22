@@ -102,8 +102,13 @@ function loadCase() {
             }
 
             loadMessages();
-        }).catch(() => {
-            document.getElementById('case-detail-loading').textContent = 'Kasus tidak ditemukan.';
+            // Poll for new messages every 3 seconds
+            if (!window.chatPollInterval) {
+                window.chatPollInterval = setInterval(loadMessages, 3000);
+            }
+        })
+        .catch(e => {
+            document.getElementById('case-detail-loading').textContent = 'Gagal memuat kasus atau kasus tidak ditemukan.';
         });
 }
 
@@ -126,16 +131,20 @@ function loadMessages() {
             let msgs = d.data || [];
             if (msgs.data && Array.isArray(msgs.data)) msgs = msgs.data;
             const el = document.getElementById('case-messages');
+            const isAtBottom = el.scrollHeight - el.scrollTop <= el.clientHeight + 50;
             if (!msgs.length) { el.innerHTML = '<div style="text-align:center;padding:24px;color:rgba(7,6,7,0.4);font-size:13px;">Belum ada pesan.</div>'; return; }
             el.innerHTML = msgs.map(m => {
-                const role = m.sender ? m.sender.role : 'client';
+                const role = m.sender ? m.sender.role : 'paralegal';
                 const isMe = role === 'client';
                 return `<div class="chat-message ${isMe?'chat-message-user':'chat-message-ai'}">
                     <p style="font-size:14px;line-height:1.5;">${m.message}</p>
-                    <p style="font-size:11px;margin-top:4px;opacity:0.5;">${new Date(m.created_at).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}</p>
+                    <p style="font-size:11px;margin-top:4px;opacity:0.5;">${isMe ? 'Anda' : 'Paralegal'} · ${new Date(m.created_at).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}</p>
                 </div>`;
             }).join('');
-            el.scrollTop = el.scrollHeight;
+            if (isAtBottom || window.justSentMsg) {
+                el.scrollTop = el.scrollHeight;
+                window.justSentMsg = false;
+            }
         });
 }
 
@@ -149,6 +158,7 @@ async function sendMsg() {
         headers: { 'Authorization': 'Bearer '+token, 'Accept': 'application/json', 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: text })
     });
+    window.justSentMsg = true;
     loadMessages();
 }
 

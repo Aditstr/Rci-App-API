@@ -50,7 +50,7 @@
                 </div>
                 <div class="chat-messages" id="case-messages"></div>
                 <div class="chat-input-bar">
-                    <input type="text" id="msg-input" placeholder="Kirim pesan ke paralegal..." style="flex:1;padding:12px 20px;border-radius:100px;border:1.5px solid var(--color-pumice);background:var(--color-pumice);font-family:var(--font-dm-sans);font-weight:500;font-size:14px;outline:none;" onkeydown="if(event.key==='Enter')sendMsg()">
+                    <input type="text" id="msg-input" placeholder="Kirim pesan ke klien..." style="flex:1;padding:12px 20px;border-radius:100px;border:1.5px solid var(--color-pumice);background:var(--color-pumice);font-family:var(--font-dm-sans);font-weight:500;font-size:14px;outline:none;" onkeydown="if(event.key==='Enter')sendMsg()">
                     <button onclick="sendMsg()" class="btn-primary" style="padding:12px 20px;font-size:14px;">Kirim</button>
                 </div>
             </div>
@@ -114,6 +114,10 @@ function loadCase() {
             }
 
             loadMessages();
+            // Poll for new messages every 3 seconds
+            if (!window.chatPollInterval) {
+                window.chatPollInterval = setInterval(loadMessages, 3000);
+            }
         }).catch(() => {
             document.getElementById('case-detail-loading').textContent = 'Kasus tidak ditemukan.';
         });
@@ -139,6 +143,7 @@ function loadMessages() {
             let msgs = d.data || [];
             if (msgs.data && Array.isArray(msgs.data)) msgs = msgs.data;
             const el = document.getElementById('case-messages');
+            const isAtBottom = el.scrollHeight - el.scrollTop <= el.clientHeight + 50;
             if (!msgs.length) { el.innerHTML = '<div style="text-align:center;padding:24px;color:rgba(7,6,7,0.4);font-size:13px;">Belum ada pesan.</div>'; return; }
             el.innerHTML = msgs.map(m => {
                 const role = m.sender ? m.sender.role : 'client';
@@ -148,7 +153,10 @@ function loadMessages() {
                     <p style="font-size:11px;margin-top:4px;opacity:0.5;">${isMe ? 'Anda' : 'Klien'} · ${new Date(m.created_at).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}</p>
                 </div>`;
             }).join('');
-            el.scrollTop = el.scrollHeight;
+            if (isAtBottom || window.justSentMsg) {
+                el.scrollTop = el.scrollHeight;
+                window.justSentMsg = false;
+            }
         });
 }
 
@@ -162,6 +170,7 @@ async function sendMsg() {
         headers: { 'Authorization': 'Bearer '+token, 'Accept': 'application/json', 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: text })
     });
+    window.justSentMsg = true;
     loadMessages();
 }
 
