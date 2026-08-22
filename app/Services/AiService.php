@@ -285,7 +285,7 @@ PROMPT;
                     ],
                     'generationConfig' => [
                         'temperature'     => 0.5,
-                        'maxOutputTokens' => 1024,
+                        'maxOutputTokens' => 4096,
                     ],
                 ]);
 
@@ -330,7 +330,7 @@ PROMPT;
                         ['role' => 'user',   'content' => $message],
                     ],
                     'temperature' => 0.5,
-                    'max_tokens'  => 1024,
+                    'max_tokens'  => 4096,
                 ]);
 
             $content = $response->json('choices.0.message.content');
