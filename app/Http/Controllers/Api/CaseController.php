@@ -121,6 +121,8 @@ class CaseController extends Controller
                 ], 400);
             }
 
+            \Illuminate\Support\Facades\DB::beginTransaction();
+
             $mappedCategory = $this->mapCategory(
                 $request->input('category', $request->input('case_type', 'general'))
             );
@@ -145,16 +147,18 @@ class CaseController extends Controller
             $user->wallet->balance -= 20000;
             $user->wallet->save();
 
-            // Catat transaksi
+            // Catat transaksi dengan tipe enum yang valid ('withdrawal')
             \App\Models\WalletTransaction::create([
                 'wallet_id' => $user->wallet->id,
                 'amount' => -20000,
-                'type' => 'payment',
+                'type' => 'withdrawal',
                 'reference_id' => $case->id,
                 'reference_type' => get_class($case),
                 'status' => 'completed',
                 'description' => 'Biaya pengajuan kasus #' . $case->id
             ]);
+
+            \Illuminate\Support\Facades\DB::commit();
 
             return response()->json([
                 'success' => true,
@@ -163,12 +167,14 @@ class CaseController extends Controller
             ], 201);
 
         } catch (\Illuminate\Database\QueryException $e) {
+            \Illuminate\Support\Facades\DB::rollBack();
             \Illuminate\Support\Facades\Log::error('Case store DB error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal menyimpan kasus. Silakan coba lagi.',
+                'message' => 'Gagal menyimpan kasus. Silakan coba lagi. (' . $e->getMessage() . ')',
             ], 500);
         } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\DB::rollBack();
             \Illuminate\Support\Facades\Log::error('Case store error: ' . $e->getMessage(), [
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),

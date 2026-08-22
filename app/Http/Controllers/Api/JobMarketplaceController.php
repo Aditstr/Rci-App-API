@@ -77,7 +77,7 @@ class JobMarketplaceController extends Controller
         \App\Models\WalletTransaction::create([
             'wallet_id' => $user->wallet->id,
             'amount' => 20000,
-            'type' => 'earning',
+            'type' => 'deposit',
             'reference_id' => $case->id,
             'reference_type' => get_class($case),
             'status' => 'completed',
