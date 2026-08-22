@@ -154,19 +154,16 @@ window.onUserLoaded = function(user) {
     const expert = user.expert_profile;
     
     // Alur Onboarding / Pending
-    if (expert.verification_status === 'approved') {
-        // Tampilkan dashboard
-        document.getElementById('dashboard-container').style.display = 'block';
-    } else if (!expert || !expert.has_documents) {
-        document.getElementById('onboarding-container').style.display = 'block';
-        fetchSOP();
-    } else if (expert.verification_status === 'pending' || expert.verification_status === 'rejected') {
+    if (expert.verification_status === 'pending' || expert.verification_status === 'rejected') {
         document.getElementById('pending-container').style.display = 'block';
         if (expert.verification_status === 'rejected') {
             document.querySelector('#pending-container h2').textContent = 'Pendaftaran Ditolak';
             document.querySelector('#pending-container p').innerHTML = `Maaf, dokumen Anda ditolak dengan alasan: <strong>${expert.rejection_reason}</strong>.<br><br>Silakan menghubungi admin atau daftar ulang.`;
             document.querySelector('#pending-container svg').style.stroke = 'var(--color-ember)';
         }
+    } else if (!expert || (!expert.has_documents && expert.verification_status !== 'approved')) {
+        document.getElementById('onboarding-container').style.display = 'block';
+        fetchSOP();
     } else {
         // Tampilkan dashboard
         document.getElementById('dashboard-container').style.display = 'block';
