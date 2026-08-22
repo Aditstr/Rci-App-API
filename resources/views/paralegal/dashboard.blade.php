@@ -331,7 +331,7 @@ function escalateCase(id) {
         loadKanban();
     }).catch(() => showToast('Gagal eskalasi', 'error'));
 }
-window.dropCard    = dropCard;
+window.updateStatusManual = updateStatusManual;
 window.escalateCase = escalateCase;
 })();
 </script>

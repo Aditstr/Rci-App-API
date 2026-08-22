@@ -123,11 +123,13 @@ function renderActions(c) {
 function loadMessages() {
     fetch('/api/v1/cases/'+caseId+'/messages', { headers: { 'Authorization': 'Bearer '+token, 'Accept': 'application/json' }})
         .then(r => r.json()).then(d => {
-            const msgs = d.data || d || [];
+            let msgs = d.data || [];
+            if (msgs.data && Array.isArray(msgs.data)) msgs = msgs.data;
             const el = document.getElementById('case-messages');
             if (!msgs.length) { el.innerHTML = '<div style="text-align:center;padding:24px;color:rgba(7,6,7,0.4);font-size:13px;">Belum ada pesan.</div>'; return; }
             el.innerHTML = msgs.map(m => {
-                const isMe = m.sender_role === 'client';
+                const role = m.sender ? m.sender.role : 'client';
+                const isMe = role === 'client';
                 return `<div class="chat-message ${isMe?'chat-message-user':'chat-message-ai'}">
                     <p style="font-size:14px;line-height:1.5;">${m.message}</p>
                     <p style="font-size:11px;margin-top:4px;opacity:0.5;">${new Date(m.created_at).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}</p>
