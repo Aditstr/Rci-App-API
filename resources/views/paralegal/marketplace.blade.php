@@ -49,7 +49,9 @@ window.onUserLoaded = function() { loadMarketplace(); };
 function loadMarketplace() {
     fetch('/api/v1/paralegal/marketplace', { headers: { 'Authorization': 'Bearer '+token, 'Accept': 'application/json' }})
         .then(r => r.json()).then(d => {
-            allCases = d.data || d || [];
+            let items = d.data;
+            if (items && Array.isArray(items.data)) items = items.data;
+            allCases = items || d || [];
             renderCases(allCases);
         }).catch(() => {
             document.getElementById('marketplace-grid').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px;color:rgba(7,6,7,0.4);">Gagal memuat data marketplace.</div>';
@@ -64,12 +66,12 @@ function renderCases(cases) {
     }
     grid.innerHTML = cases.map(c => {
         const typeColors = { perdata:'var(--color-sulfur)', pidana:'var(--color-ember)', tata_usaha:'var(--color-plasma-violet)' };
-        const tagBg = typeColors[c.case_type] || 'var(--color-pumice)';
-        const tagColor = c.case_type === 'perdata' ? 'var(--color-obsidian)' : 'var(--color-chalk)';
+        const tagBg = typeColors[c.category] || 'var(--color-pumice)';
+        const tagColor = c.category === 'perdata' || c.category === 'general' ? 'var(--color-obsidian)' : 'var(--color-chalk)';
         return `<div class="card" style="display:flex;flex-direction:column;gap:16px;">
             <div style="height:8px;border-radius:8px;background:${tagBg};width:48px;"></div>
             <div>
-                <span class="tag" style="background:${tagBg};color:${tagColor};margin-bottom:10px;">${(c.case_type||'umum').replace('_',' ')}</span>
+                <span class="tag" style="background:${tagBg};color:${tagColor};margin-bottom:10px;">${(c.category||'umum').replace('_',' ')}</span>
                 <h3 class="font-display text-heading" style="font-size:24px;margin-bottom:8px;letter-spacing:0.02em;line-height:1.2;">${c.title || 'Kasus Hukum #'+c.id}</h3>
                 <p style="font-size:13px;color:rgba(7,6,7,0.55);line-height:1.6;">${(c.description||'').substring(0,120)}${(c.description||'').length>120?'...':''}</p>
             </div>
@@ -90,7 +92,11 @@ function filterCases(type, btn) {
     });
     btn.style.background = 'var(--color-ember)';
     btn.style.color = 'white';
-    const filtered = type === 'all' ? allCases : allCases.filter(c => c.case_type === type);
+    const filtered = type === 'all' ? allCases : allCases.filter(c => {
+        // Map UI types to database categories
+        const typeMap = { 'perdata': 'general', 'pidana': 'criminal', 'tata_usaha': 'corporate' };
+        return c.category === (typeMap[type] || type);
+    });
     renderCases(filtered);
 }
 
