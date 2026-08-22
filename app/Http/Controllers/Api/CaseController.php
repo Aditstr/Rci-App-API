@@ -143,20 +143,8 @@ class CaseController extends Controller
             ]);
             $case->refresh();
 
-            // Potong saldo Klien
-            $user->wallet->balance -= 20000;
-            $user->wallet->save();
-
-            // Catat transaksi dengan tipe enum yang valid ('withdrawal')
-            \App\Models\WalletTransaction::create([
-                'wallet_id' => $user->wallet->id,
-                'amount' => -20000,
-                'type' => 'withdrawal',
-                'reference_id' => $case->id,
-                'reference_type' => get_class($case),
-                'status' => 'completed',
-                'description' => 'Biaya pengajuan kasus #' . $case->id
-            ]);
+            // Tahan dana Rp20.000 ke escrow
+            $this->escrowService->lockFundsForCase($case, 20000, $user);
 
             \Illuminate\Support\Facades\DB::commit();
 

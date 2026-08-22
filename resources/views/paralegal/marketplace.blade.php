@@ -111,8 +111,11 @@ function applyCase(caseId, btn) {
     fetch(`/api/v1/paralegal/marketplace/${caseId}/apply`, {
         method: 'POST',
         headers: { 'Authorization': 'Bearer '+token, 'Accept': 'application/json' }
-    }).then(r => {
-        if (!r.ok) throw new Error('Gagal mengambil kasus');
+    }).then(async r => {
+        if (!r.ok) {
+            const errData = await r.json().catch(() => ({}));
+            throw new Error(errData.message || 'Gagal mengambil kasus');
+        }
         showToast('Kasus berhasil diambil! Cek Kanban Board Anda.');
         btn.textContent = '✓ Diambil';
         btn.style.background = 'var(--color-obsidian)';

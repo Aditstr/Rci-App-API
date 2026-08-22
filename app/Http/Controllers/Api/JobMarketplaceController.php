@@ -48,12 +48,16 @@ class JobMarketplaceController extends Controller
         $user = $request->user()->load('expertProfile');
 
         // Pemeriksaan kelayakan (Opsional): apakah paralegal terverifikasi SOP?
-        if (!$user->expertProfile || !$user->expertProfile->is_verified) {
+        if (!$user->expertProfile || !$user->expertProfile->isApproved()) {
              return response()->json([
                  'success' => false,
                  'message' => 'Anda harus lulus Ujian SOP (Terverifikasi) untuk mengambil kasus.'
              ], 403);
         }
+
+        \Illuminate\Support\Facades\DB::beginTransaction();
+
+        try {
 
         /**
          * Di rilis aktual kita mungkin perlu tabel pivot (bidding/lamaran) agar ahli hukum di-review 
@@ -70,30 +74,23 @@ class JobMarketplaceController extends Controller
         // Refresh the model to get the updated values
         $case->refresh();
 
-        // Tambahkan pendapatan Rp20.000 ke dompet Paralegal
-        $user->wallet->balance += 20000;
-        $user->wallet->save();
-
-        \App\Models\WalletTransaction::create([
-            'wallet_id' => $user->wallet->id,
-            'amount' => 20000,
-            'type' => 'deposit',
-            'reference_id' => $case->id,
-            'reference_type' => get_class($case),
-            'status' => 'completed',
-            'description' => 'Pendapatan ambil kasus baru #' . $case->id
-        ]);
-
-        // Eager load client to avoid N+1 lazy loading
-        $case->load('client');
-
         // Notify the client that their case has been taken
         $case->client->notify(new \App\Notifications\CaseStatusUpdated($case, "Kasus Anda telah diambil oleh pakar hukum " . $user->name . " dan sedang diproses."));
+
+        \Illuminate\Support\Facades\DB::commit();
 
         return response()->json([
             'success' => true,
             'message' => 'Berhasil melamar kasus dan menugaskan ke profil Anda.',
             'data'    => new LegalCaseResource($case)
         ]);
+    } catch (\Throwable $e) {
+        \Illuminate\Support\Facades\DB::rollBack();
+        \Illuminate\Support\Facades\Log::error('Marketplace Apply Error: ' . $e->getMessage());
+        return response()->json([
+            'success' => false,
+            'message' => 'Gagal mengambil kasus. Silakan coba lagi. (' . $e->getMessage() . ')',
+        ], 500);
+    }
     }
 }

@@ -17,7 +17,7 @@ class EscrowService
     /**
      * Platform fee percentage (10%).
      */
-    private const PLATFORM_FEE_PERCENT = 10;
+    private const PLATFORM_FEE_PERCENT = 20;
 
     public function __construct(
         protected XenditService $xenditService,
@@ -234,9 +234,9 @@ class EscrowService
      * Flow:
      *  1. Validate case status is 'completed'.
      *  2. Find the pending `escrow_hold` transaction for this case.
-     *  3. Calculate split: 90% expert payout, 10% platform fee.
-     *  4. Credit 90% to the expert's wallet → record `payment_release`.
-     *  5. Credit 10% to the admin's wallet → record `admin_fee`.
+     *  3. Calculate split: 80% expert payout, 20% platform fee.
+     *  4. Credit 80% to the expert's wallet → record `payment_release`.
+     *  5. Credit 20% to the admin's wallet → record `admin_fee`.
      *  6. Mark original escrow_hold as `success`.
      *
      * Uses DB::transaction + lockForUpdate for data integrity.
@@ -284,7 +284,7 @@ class EscrowService
             $expertWallet = Wallet::where('user_id', $expert->id)->lockForUpdate()->firstOrFail();
             $adminWallet  = Wallet::where('user_id', $adminUser->id)->lockForUpdate()->firstOrFail();
 
-            // 4. Credit 90% to expert/mitra wallet
+            // 4. Credit 80% to expert/mitra wallet
             $expertWallet->credit($mitraPayout);
 
             WalletTransaction::create([
@@ -294,11 +294,11 @@ class EscrowService
                 'reference_id'   => $case->id,
                 'reference_type' => LegalCase::class,
                 'status'         => 'success',
-                'description'    => "Pencairan dana kasus #{$case->case_number} — 90% (Rp "
+                'description'    => "Pencairan dana kasus #{$case->case_number} — 80% (Rp "
                                   . number_format((float) $mitraPayout, 0, ',', '.') . ")",
             ]);
 
-            // 5. Credit 10% to admin/platform wallet (RCI Revenue)
+            // 5. Credit 20% to admin/platform wallet (RCI Revenue)
             $adminWallet->credit($adminFee);
 
             WalletTransaction::create([
@@ -308,7 +308,7 @@ class EscrowService
                 'reference_id'   => $case->id,
                 'reference_type' => LegalCase::class,
                 'status'         => 'success',
-                'description'    => "Platform fee kasus #{$case->case_number} — 10% (Rp "
+                'description'    => "Platform fee kasus #{$case->case_number} — 20% (Rp "
                                   . number_format((float) $adminFee, 0, ',', '.') . ")",
             ]);
 
