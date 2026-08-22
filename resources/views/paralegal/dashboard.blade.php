@@ -288,6 +288,7 @@ function kanbanCard(c) {
         actionButtons += `<button onclick="updateStatusManual(${c.id}, 'in_progress')" style="padding:6px 12px;border-radius:var(--radius-pills);border:none;background:var(--color-obsidian);color:white;cursor:pointer;font-size:11px;font-family:var(--font-dm-sans);font-weight:600;">▶ Mulai Proses</button>`;
     } else if (status === 'IN_PROGRESS' || status === 'REVIEWING') {
         actionButtons += `<button onclick="updateStatusManual(${c.id}, 'on_hold')" style="padding:6px 12px;border-radius:var(--radius-pills);border:1.5px solid var(--color-obsidian);background:none;cursor:pointer;font-size:11px;font-family:var(--font-dm-sans);font-weight:600;">⏸ Tunda</button>`;
+        actionButtons += `<button onclick="completeCase(${c.id})" style="padding:6px 12px;border-radius:var(--radius-pills);border:none;background:var(--color-plasma-violet);color:white;cursor:pointer;font-size:11px;font-family:var(--font-dm-sans);font-weight:600;">✅ Selesai</button>`;
     } else if (status === 'ON_HOLD') {
         actionButtons += `<button onclick="updateStatusManual(${c.id}, 'in_progress')" style="padding:6px 12px;border-radius:var(--radius-pills);border:none;background:var(--color-obsidian);color:white;cursor:pointer;font-size:11px;font-family:var(--font-dm-sans);font-weight:600;">▶ Lanjutkan</button>`;
     }
@@ -333,6 +334,37 @@ function escalateCase(id) {
 }
 window.updateStatusManual = updateStatusManual;
 window.escalateCase = escalateCase;
+
+window.completeCase = async function(id) {
+    const notes = prompt("Tuliskan rangkuman hasil kerja / catatan penyelesaian untuk dikonfirmasi klien:");
+    if (notes === null) return;
+    if (notes.trim() === '') {
+        showToast("Catatan penyelesaian wajib diisi.", "error");
+        return;
+    }
+    
+    try {
+        const res = await fetch(`/api/v1/expert/cases/${id}/complete`, {
+            method: 'POST',
+            headers: { 
+                'Authorization': 'Bearer ' + token, 
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ completion_notes: notes })
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+            showToast('Kasus berhasil diselesaikan! Menunggu konfirmasi klien.');
+            loadKanban();
+        } else {
+            showToast(data.message || 'Gagal menyelesaikan kasus.', 'error');
+        }
+    } catch (err) {
+        showToast('Terjadi kesalahan saat menyelesaikan kasus.', 'error');
+    }
+}
 })();
 </script>
 @endpush
