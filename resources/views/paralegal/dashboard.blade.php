@@ -176,9 +176,9 @@ window.onUserLoaded = function(user) {
             headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' }
         }).then(r => r.json()).then(d => {
             const s = d.data || d;
-            document.getElementById('p-active').textContent = s.active_cases ?? '—';
-            document.getElementById('p-done').textContent   = s.completed_this_month ?? '—';
-            document.getElementById('p-revenue').textContent = s.total_earnings ? 'Rp '+Number(s.total_earnings).toLocaleString('id-ID') : '—';
+            document.getElementById('p-active').textContent = (s.new_cases_count + s.reviewing_count) || '0';
+            document.getElementById('p-done').textContent   = s.completed_count || '0';
+            document.getElementById('p-revenue').textContent = s.total_earnings ? 'Rp '+Number(s.total_earnings).toLocaleString('id-ID') : 'Rp 0';
             document.getElementById('p-rating').textContent = s.average_rating ? Number(s.average_rating).toFixed(1) + ' ★' : '—';
         }).catch(() => {});
 
@@ -253,7 +253,9 @@ function loadKanban() {
     fetch('/api/v1/paralegal/cases', {
         headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' }
     }).then(r => r.json()).then(d => {
-        allCases = d.data || d || [];
+        let items = d.data;
+        if (items && Array.isArray(items.data)) items = items.data;
+        allCases = items || d || [];
         renderKanban();
     }).catch(() => {
         document.getElementById('kanban-board').innerHTML = '<p style="color:rgba(7,6,7,0.4);text-align:center;padding:40px;">Gagal memuat kasus.</p>';
@@ -263,8 +265,10 @@ function loadKanban() {
 function renderKanban() {
     const cols = { PENDING: [], IN_PROGRESS: [], ON_HOLD: [] };
     allCases.forEach(c => {
-        if (cols[c.status]) cols[c.status].push(c);
-        else if (c.status === 'ESCALATED') cols.IN_PROGRESS.push(c);
+        const s = (c.status || '').toUpperCase();
+        if (cols[s]) cols[s].push(c);
+        else if (s === 'ESCALATED' || s === 'REVIEWING') cols.IN_PROGRESS.push(c);
+        else if (s === 'ASSIGNED') cols.PENDING.push(c);
     });
 
     ['PENDING','IN_PROGRESS','ON_HOLD'].forEach(status => {
