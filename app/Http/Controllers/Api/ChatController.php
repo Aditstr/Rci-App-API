@@ -70,7 +70,6 @@ class ChatController extends Controller
                 'sender_id'   => $user->id,
                 'message'     => $validated['message'],
                 'attachments' => $validated['attachments'] ?? [],
-                'is_read'     => false,
             ]);
 
             $chatMessage->load('sender:id,name,role');
