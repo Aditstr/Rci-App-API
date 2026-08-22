@@ -35,6 +35,7 @@ Route::prefix('paralegal')->group(function () {
     Route::get('/',             fn() => view('paralegal.dashboard'));
     Route::get('/kanban',       fn() => view('paralegal.dashboard'));
     Route::get('/marketplace',  fn() => view('paralegal.marketplace'));
+    Route::get('/wallet',       fn() => view('paralegal.wallet'));
     Route::get('/cases/{id}',   fn() => view('paralegal.case-detail'));
 });
 
@@ -43,6 +44,7 @@ Route::prefix('lawyer')->group(function () {
     Route::get('/',        fn() => view('lawyer.dashboard'));
     Route::get('/cases',   fn() => view('lawyer.cases'));
     Route::get('/revenue', fn() => view('lawyer.revenue'));
+    Route::get('/wallet',  fn() => view('lawyer.wallet'));
 });
 
 Route::get('/swagger.yaml', function () {
