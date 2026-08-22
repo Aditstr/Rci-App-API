@@ -33,8 +33,7 @@ class VerificationController extends Controller
         }
 
         if ($user->markEmailAsVerified()) {
-            $user->is_verified = true;
-            $user->save();
+            User::where('id', $user->id)->update(['is_verified' => \Illuminate\Support\Facades\DB::raw('true')]);
         }
 
         return response()->json([

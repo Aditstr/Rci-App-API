@@ -60,11 +60,16 @@ class JobMarketplaceController extends Controller
          * klien terlebih dahulu, namun untuk prototipe, kita dapat meng-assign langsung Paralegal ini 
          * ke dalam kasus jika mereka Apply.
          */
-        $case->expert_id = $user->id;
-        $case->status = 'assigned';
-        $case->assigned_at = now();
-        $case->is_marketplace = \Illuminate\Support\Facades\DB::raw('false'); // Karena sudah diambil
-        $case->save();
+        // Update using query builder to bypass Eloquent boolean casting for DB::raw
+        \App\Models\LegalCase::where('id', $case->id)->update([
+            'expert_id' => $user->id,
+            'status' => 'assigned',
+            'assigned_at' => now(),
+            'is_marketplace' => \Illuminate\Support\Facades\DB::raw('false')
+        ]);
+        
+        // Refresh the model to get the updated values
+        $case->refresh();
 
         // Eager load client to avoid N+1 lazy loading
         $case->load('client');

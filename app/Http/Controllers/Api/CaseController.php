@@ -123,8 +123,13 @@ class CaseController extends Controller
                 'category'       => $mappedCategory,
                 'status'         => 'submitted',
                 'submitted_at'   => now(),
-                'is_marketplace' => \Illuminate\Support\Facades\DB::raw('true'),
             ]);
+            
+            // Bypass cast to boolean
+            \App\Models\LegalCase::where('id', $case->id)->update([
+                'is_marketplace' => \Illuminate\Support\Facades\DB::raw('true')
+            ]);
+            $case->refresh();
 
             return response()->json([
                 'success' => true,
