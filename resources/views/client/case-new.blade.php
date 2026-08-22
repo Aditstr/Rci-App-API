@@ -118,7 +118,14 @@ document.getElementById('new-case-form').addEventListener('submit', async functi
         setTimeout(() => window.location.href = '/client/cases', 1200);
     } catch(err) {
         errBox.textContent = err.message; errBox.style.display = 'block';
-        btn.textContent = 'Ajukan Kasus'; btn.disabled = false;
+        btn.textContent = 'Ajukan Kasus & Bayar Rp20.000'; btn.disabled = false;
+        
+        // Tambahkan pop up khusus untuk saldo tidak cukup
+        if (err.message.toLowerCase().includes('saldo tidak mencukupi')) {
+            if (confirm(err.message + "\n\nApakah Anda ingin diarahkan ke halaman Dompet untuk Top Up sekarang?")) {
+                window.location.href = '/client/wallet';
+            }
+        }
     }
 });
 window.selectType = selectType;
