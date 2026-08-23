@@ -97,7 +97,10 @@ return [
             'search_path' => 'public',
             'sslmode' => env('DB_SSLMODE', 'prefer'),
             'options' => [
-                \PDO::ATTR_EMULATE_PREPARES => true,
+                // Native PostgreSQL prepares preserve boolean parameter types.
+                // Emulated prepares serialize PHP booleans as 1/0 and can cause
+                // "column is of type boolean" failures during model updates.
+                \PDO::ATTR_EMULATE_PREPARES => false,
             ],
         ],
 

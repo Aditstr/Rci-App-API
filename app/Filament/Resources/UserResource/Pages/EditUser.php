@@ -16,4 +16,11 @@ class EditUser extends EditRecord
             Actions\DeleteAction::make(),
         ];
     }
+
+    protected function afterSave(): void
+    {
+        if (! $this->record->is_active) {
+            $this->record->tokens()->delete();
+        }
+    }
 }

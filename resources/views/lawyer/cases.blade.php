@@ -80,7 +80,8 @@
         fetch('/api/v1/expert/cases', {
             headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' }
         }).then(r => r.json()).then(d => {
-            allCases = d.data || d || [];
+            const payload = d.data || d || [];
+            allCases = Array.isArray(payload) ? payload : (payload.data || []);
             document.getElementById('cases-count').textContent = allCases.length + ' Kasus';
             renderCases(allCases);
         }).catch(() => {
@@ -109,6 +110,7 @@
                 </div>
                 <span class="tag" style="background:${s.bg};color:${s.color};">${s.label}</span>
                 <div style="display:flex;gap:8px;flex-shrink:0;">
+                    <a href="/lawyer/cases/${c.id}" class="btn-secondary" style="padding:10px 18px;font-size:13px;text-decoration:none;">Buka kasus</a>
                     <button onclick="window.openQuoteModal(${c.id}, '${(c.title||'Kasus #'+c.id).replace(/'/g,"\\'")}', this)" class="btn-primary" style="padding:10px 18px;font-size:13px;">Beri Penawaran</button>
                 </div>
             </div>`;

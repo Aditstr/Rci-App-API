@@ -2,20 +2,21 @@
 @section('title', 'Detail Kasus — RCI')
 
 @section('sidebar-nav')
+@php($isLawyerWorkspace = request()->is('lawyer/*'))
 <nav style="display:flex; flex-direction:column; gap:4px;">
-    <a href="/paralegal" class="sidebar-nav-item">
+    <a href="{{ $isLawyerWorkspace ? '/lawyer' : '/paralegal' }}" class="sidebar-nav-item">
         <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
         Dashboard
     </a>
-    <a href="/paralegal/kanban" class="sidebar-nav-item active">
+    <a href="{{ $isLawyerWorkspace ? '/lawyer/cases' : '/paralegal/kanban' }}" class="sidebar-nav-item active">
         <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-        Kanban Board
+        {{ $isLawyerWorkspace ? 'Kasus Eskalasi' : 'Kanban Board' }}
     </a>
-    <a href="/paralegal/marketplace" class="sidebar-nav-item">
+    <a href="{{ $isLawyerWorkspace ? '/lawyer/revenue' : '/paralegal/marketplace' }}" class="sidebar-nav-item">
         <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-        Job Marketplace
+        {{ $isLawyerWorkspace ? 'Revenue Royalti' : 'Job Marketplace' }}
     </a>
-    <a href="/paralegal/wallet" class="sidebar-nav-item">
+    <a href="{{ $isLawyerWorkspace ? '/lawyer/wallet' : '/paralegal/wallet' }}" class="sidebar-nav-item">
         <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
         Dompet
     </a>
@@ -24,7 +25,7 @@
 
 @section('content')
 <div style="margin-bottom:24px;">
-    <a href="/paralegal" style="color:rgba(7,6,7,0.45);text-decoration:none;font-size:14px;">← Kembali ke Dashboard</a>
+    <a href="{{ $isLawyerWorkspace ? '/lawyer/cases' : '/paralegal' }}" style="color:rgba(7,6,7,0.45);text-decoration:none;font-size:14px;">← Kembali ke Dashboard</a>
 </div>
 
 <div id="case-detail-loading" style="text-align:center;padding:80px;color:rgba(7,6,7,0.4);">Memuat detail kasus...</div>
@@ -43,8 +44,10 @@
                 <p style="font-size:15px;line-height:1.7;color:rgba(7,6,7,0.75);" id="case-desc-display">—</p>
             </div>
 
+            @include('partials.payment-safety-notice', ['audience' => 'expert'])
+
             <!-- Chat -->
-            <div class="chat-container" style="height:400px;">
+            <div class="chat-container" style="height:440px;">
                 <div style="padding:16px 24px;border-bottom:1.5px dotted var(--color-pumice);">
                     <h3 class="font-display" style="font-size:20px;letter-spacing:0.02em;">OBROLAN KASUS</h3>
                 </div>
@@ -85,11 +88,17 @@
 (function() {
 const token = localStorage.getItem('rci_token');
 const caseId = window.location.pathname.split('/').pop();
+let currentUserId = null;
+let currentUserRole = null;
 
-window.onUserLoaded = function() { loadCase(); };
+window.onUserLoaded = function(user) { currentUserId = user.id; currentUserRole = user.role; loadCase(); };
+
+function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>'"]/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#039;','"':'&quot;'}[char]));
+}
 
 function loadCase() {
-    fetch('/api/v1/paralegal/cases/'+caseId, { headers: { 'Authorization': 'Bearer '+token, 'Accept': 'application/json' }})
+    fetch('/api/v1/expert/cases/'+caseId, { headers: { 'Authorization': 'Bearer '+token, 'Accept': 'application/json' }})
         .then(r => { if(!r.ok) throw new Error(); return r.json(); })
         .then(d => {
             const c = d.data || d;
@@ -100,14 +109,15 @@ function loadCase() {
             document.getElementById('case-desc-display').textContent = c.description || '—';
             document.getElementById('case-meta').textContent = `${(c.case_type||'umum').replace('_',' ')} · Dibuat ${new Date(c.created_at).toLocaleDateString('id-ID')}`;
 
+            const normalizedStatus = String(c.status || '').toUpperCase();
             const statusMap = {PENDING:{bg:'#f5f28e',color:'#070607',label:'Menunggu'},IN_PROGRESS:{bg:'#524ae9',color:'#fff',label:'Berlangsung'},ESCALATED:{bg:'#fc5000',color:'#fff',label:'Eskalasi'},COMPLETED:{bg:'#070607',color:'#fff',label:'Selesai'},CANCELLED:{bg:'#e2e2df',color:'rgba(7,6,7,0.5)',label:'Dibatalkan'}};
-            const s = statusMap[c.status] || {bg:'#e2e2df',color:'#070607',label:c.status};
+            const s = statusMap[normalizedStatus] || {bg:'#e2e2df',color:'#070607',label:c.status};
             const badge = document.getElementById('case-status-badge');
             badge.textContent = s.label; badge.style.background = s.bg; badge.style.color = s.color;
 
             renderActions(c);
 
-            if (c.status === 'ASSIGNED' || c.status === 'PENDING') {
+            if (normalizedStatus === 'ASSIGNED' || normalizedStatus === 'PENDING') {
                 document.getElementById('case-status-badge').textContent = 'Tugas Baru';
                 document.getElementById('case-status-badge').style.background = '#f5f28e';
                 document.getElementById('case-status-badge').style.color = '#070607';
@@ -126,10 +136,13 @@ function loadCase() {
 function renderActions(c) {
     const el = document.getElementById('case-actions');
     const acts = [];
-    if (['IN_PROGRESS','REVIEWING'].includes(c.status)) {
+    const normalizedStatus = String(c.status || '').toUpperCase();
+    if (['IN_PROGRESS','REVIEWING'].includes(normalizedStatus)) {
         acts.push(`<button onclick="expertComplete()" class="btn-primary" style="width:100%;padding:12px;margin-bottom:8px;">✓ Selesaikan Kasus</button>`);
-        acts.push(`<button onclick="escalateCase()" class="btn-secondary" style="width:100%;padding:12px;color:var(--color-ember);border-color:var(--color-ember);">⬆ Eskalasi ke Pengacara</button>`);
-    } else if (c.status === 'COMPLETED') {
+        if (currentUserRole === 'paralegal') {
+            acts.push(`<button onclick="escalateCase()" class="btn-secondary" style="width:100%;padding:12px;color:var(--color-ember);border-color:var(--color-ember);">⬆ Eskalasi ke Pengacara</button>`);
+        }
+    } else if (normalizedStatus === 'COMPLETED') {
         acts.push(`<p style="text-align:center;font-size:13px;color:rgba(7,6,7,0.4);">Kasus sudah selesai.</p>`);
     } else {
         acts.push(`<p style="text-align:center;font-size:13px;color:rgba(7,6,7,0.4);">Mulai proses kasus di Kanban untuk melihat opsi.</p>`);
@@ -147,9 +160,9 @@ function loadMessages() {
             if (!msgs.length) { el.innerHTML = '<div style="text-align:center;padding:24px;color:rgba(7,6,7,0.4);font-size:13px;">Belum ada pesan.</div>'; return; }
             el.innerHTML = msgs.map(m => {
                 const role = m.sender ? m.sender.role : 'client';
-                const isMe = role === 'paralegal' || role === 'lawyer';
+                const isMe = Number(m.sender_id) === Number(currentUserId);
                 return `<div class="chat-message ${isMe?'chat-message-user':'chat-message-ai'}">
-                    <p style="font-size:14px;line-height:1.5;">${m.message}</p>
+                    <p style="font-size:14px;line-height:1.5;">${escapeHtml(m.message).replace(/\n/g, '<br>')}</p>
                     <p style="font-size:11px;margin-top:4px;opacity:0.5;">${isMe ? 'Anda' : 'Klien'} · ${new Date(m.created_at).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}</p>
                 </div>`;
             }).join('');
@@ -165,11 +178,17 @@ async function sendMsg() {
     const text = input.value.trim();
     if (!text) return;
     input.value = '';
-    await fetch('/api/v1/expert/cases/'+caseId+'/messages', {
+    const response = await fetch('/api/v1/expert/cases/'+caseId+'/messages', {
         method: 'POST',
         headers: { 'Authorization': 'Bearer '+token, 'Accept': 'application/json', 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: text })
     });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+        input.value = text;
+        showToast(data.message || 'Pesan gagal dikirim.', 'error');
+        return;
+    }
     window.justSentMsg = true;
     loadMessages();
 }

@@ -16,16 +16,39 @@ class AdminSeeder extends Seeder
      */
     public function run(): void
     {
-        $admin = User::updateOrCreate(
-            ['email' => 'admin@rci-app.com'],
-            [
-                'name'              => 'RCI Admin',
-                'password'          => Hash::make('RciAdmin@2026!'),
-                'role'              => 'admin',
-                'phone'             => '081200000000',
+        $email = trim((string) config('admin.email'));
+        $password = (string) config('admin.password');
+
+        if ($email === '') {
+            $this->command->warn('Admin bootstrap dilewati: ADMIN_EMAIL belum diatur.');
+
+            return;
+        }
+
+        $admin = User::where('email', $email)->first();
+
+        if (! $admin) {
+            if (strlen($password) < 12) {
+                $this->command->warn('Admin bootstrap dilewati: ADMIN_PASSWORD minimal 12 karakter.');
+
+                return;
+            }
+
+            $admin = User::create([
+                'name' => (string) config('admin.name', 'RCI Admin'),
+                'email' => $email,
+                'password' => Hash::make($password),
+                'role' => 'admin',
+                'phone' => config('admin.phone'),
                 'email_verified_at' => now(),
-            ]
-        );
+            ]);
+        } else {
+            // Do not reset an existing password every time the container starts.
+            $admin->forceFill([
+                'role' => 'admin',
+                'email_verified_at' => $admin->email_verified_at ?? now(),
+            ])->save();
+        }
 
         // PostgreSQL strict boolean: use raw SQL with TRUE/FALSE literals
         \Illuminate\Support\Facades\DB::statement(
@@ -39,6 +62,6 @@ class AdminSeeder extends Seeder
             ['balance' => '0.00']
         );
 
-        $this->command->info("✅ Admin user seeded: admin@rci-app.com");
+        $this->command->info("✅ Admin user ready: {$email}");
     }
 }

@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\ChatController;
 use App\Http\Controllers\Api\XenditWebhookController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\CaseCompletionController;
+use App\Http\Controllers\Api\ComplianceFlagController;
 use App\Http\Controllers\Api\ReviewController;
 use Illuminate\Support\Facades\Route;
 
@@ -71,7 +72,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/google/callback', [AuthController::class, 'handleGoogleCallback'])->name('api.v1.auth.google.callback');
 
         // Protected
-        Route::middleware('auth:sanctum')->group(function () {
+        Route::middleware(['auth:sanctum', 'active'])->group(function () {
             Route::post('/logout', [AuthController::class, 'logout'])->name('api.v1.auth.logout');
             Route::get('/me',      [AuthController::class, 'me'])->name('api.v1.auth.me');
 
@@ -95,7 +96,7 @@ Route::prefix('v1')->group(function () {
     // ──────────────────────────────────────────────
     // Profile Management (All authenticated & verified users)
     // ──────────────────────────────────────────────
-    Route::middleware(['auth:sanctum', 'verified'])->prefix('profile')->group(function () {
+    Route::middleware(['auth:sanctum', 'active', 'verified'])->prefix('profile')->group(function () {
         Route::get('/',         [ProfileController::class, 'show'])->name('api.v1.profile.show');
         Route::post('/',        [ProfileController::class, 'update'])->name('api.v1.profile.update');
         Route::put('/password', [ProfileController::class, 'changePassword'])->name('api.v1.profile.password');
@@ -109,7 +110,7 @@ Route::prefix('v1')->group(function () {
     // RCI API — Authenticated (Sanctum) & Verified Email
     // (Google users: auto-verified at login)
     // ──────────────────────────────────────────────
-    Route::middleware(['auth:sanctum', 'verified'])->prefix('rci')->group(function () {
+    Route::middleware(['auth:sanctum', 'active', 'verified'])->prefix('rci')->group(function () {
         // AI Chat — all authenticated & verified users
         Route::post('/chat', [RciApiController::class, 'chat'])->name('api.v1.rci.chat');
 
@@ -128,7 +129,7 @@ Route::prefix('v1')->group(function () {
     // ──────────────────────────────────────────────
     // Notifications (All authenticated & verified users)
     // ──────────────────────────────────────────────
-    Route::middleware(['auth:sanctum', 'verified'])->prefix('notifications')->group(function () {
+    Route::middleware(['auth:sanctum', 'active', 'verified'])->prefix('notifications')->group(function () {
         Route::get('/',             [\App\Http\Controllers\Api\NotificationController::class, 'index'])->name('api.v1.notifications.index');
         Route::get('/unread-count', [\App\Http\Controllers\Api\NotificationController::class, 'unreadCount'])->name('api.v1.notifications.unread_count');
         Route::post('/{id}/read',   [\App\Http\Controllers\Api\NotificationController::class, 'markAsRead'])->name('api.v1.notifications.mark_as_read');
@@ -138,7 +139,7 @@ Route::prefix('v1')->group(function () {
     // ──────────────────────────────────────────────
     // Case Management (Client Only)
     // ──────────────────────────────────────────────
-    Route::middleware(['auth:sanctum', 'verified', 'role:client'])->prefix('cases')->group(function () {
+    Route::middleware(['auth:sanctum', 'active', 'verified', 'role:client'])->prefix('cases')->group(function () {
         Route::get('/', [CaseController::class, 'index'])->name('api.v1.cases.index');
         Route::get('/{id}', [CaseController::class, 'show'])->name('api.v1.cases.show');
         Route::post('/', [CaseController::class, 'store'])->name('api.v1.cases.store');
@@ -154,6 +155,9 @@ Route::prefix('v1')->group(function () {
         Route::get('/{id}/messages', [ChatController::class, 'index'])->name('api.v1.cases.messages.index');
         Route::post('/{id}/messages', [ChatController::class, 'store'])->name('api.v1.cases.messages.store');
         Route::put('/{id}/messages/read', [ChatController::class, 'markAsRead'])->name('api.v1.cases.messages.read');
+        Route::post('/{id}/messages/{messageId}/report', [ComplianceFlagController::class, 'store'])
+            ->middleware('throttle:10,1')
+            ->name('api.v1.cases.messages.report');
 
         // Case Completion Flow (Client actions)
         Route::post('/{id}/confirm-completion', [CaseCompletionController::class, 'clientConfirm'])->name('api.v1.cases.confirm_completion');
@@ -167,7 +171,9 @@ Route::prefix('v1')->group(function () {
     // ──────────────────────────────────────────────
     // Expert Chat & Document Access (Paralegal & Lawyer)
     // ──────────────────────────────────────────────
-    Route::middleware(['auth:sanctum', 'verified', 'role:paralegal,lawyer', 'expert.verified'])->prefix('expert/cases')->group(function () {
+    Route::middleware(['auth:sanctum', 'active', 'verified', 'role:paralegal,lawyer', 'expert.verified'])->prefix('expert/cases')->group(function () {
+        Route::get('/', [ParalegalDashboardController::class, 'cases'])->name('api.v1.expert.cases.index');
+        Route::get('/{id}', [ParalegalDashboardController::class, 'show'])->name('api.v1.expert.cases.show');
         Route::get('/{id}/messages', [ChatController::class, 'index'])->name('api.v1.expert.cases.messages.index');
         Route::post('/{id}/messages', [ChatController::class, 'store'])->name('api.v1.expert.cases.messages.store');
         Route::put('/{id}/messages/read', [ChatController::class, 'markAsRead'])->name('api.v1.expert.cases.messages.read');
@@ -182,7 +188,7 @@ Route::prefix('v1')->group(function () {
     // ──────────────────────────────────────────────
     // Paralegal Workspace (Dashboard & Kanban)
     // ──────────────────────────────────────────────
-    Route::middleware(['auth:sanctum', 'verified', 'role:paralegal', 'expert.verified'])->prefix('paralegal')->group(function () {
+    Route::middleware(['auth:sanctum', 'active', 'verified', 'role:paralegal', 'expert.verified'])->prefix('paralegal')->group(function () {
         // Stats & Kanban Board
         Route::get('/dashboard/stats', [ParalegalDashboardController::class, 'stats'])->name('api.v1.paralegal.stats');
         Route::get('/cases',           [ParalegalDashboardController::class, 'cases'])->name('api.v1.paralegal.cases');
@@ -199,7 +205,7 @@ Route::prefix('v1')->group(function () {
     // ──────────────────────────────────────────────
     // Lawyer Dashboard (The Specialist)
     // ──────────────────────────────────────────────
-    Route::middleware(['auth:sanctum', 'verified', 'role:lawyer', 'expert.verified'])->prefix('lawyer')->group(function () {
+    Route::middleware(['auth:sanctum', 'active', 'verified', 'role:lawyer', 'expert.verified'])->prefix('lawyer')->group(function () {
         Route::get('/dashboard/stats',   [LawyerDashboardController::class, 'stats'])->name('api.v1.lawyer.stats');
         Route::post('/cases/{case_id}/quote', [LawyerDashboardController::class, 'sendQuotation'])->name('api.v1.lawyer.cases.quote');
         Route::get('/revenue',           [LawyerDashboardController::class, 'revenueInfo'])->name('api.v1.lawyer.revenue');
@@ -216,7 +222,7 @@ Route::prefix('v1')->group(function () {
     // ──────────────────────────────────────────────
     // Payments (Authenticated)
     // ──────────────────────────────────────────────
-    Route::middleware(['auth:sanctum', 'verified'])->prefix('payments')->group(function () {
+    Route::middleware(['auth:sanctum', 'active', 'verified'])->prefix('payments')->group(function () {
         Route::get('/',            [PaymentController::class, 'index'])->name('api.v1.payments.index');
         Route::get('/{id}/status', [PaymentController::class, 'status'])->name('api.v1.payments.status');
     });
@@ -226,4 +232,3 @@ Route::prefix('v1')->group(function () {
     // ──────────────────────────────────────────────
     Route::get('/settings/{key}', [\App\Http\Controllers\Api\SettingController::class, 'show'])->name('api.v1.settings.show');
 });
-

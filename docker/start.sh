@@ -3,9 +3,15 @@ set -e
 
 echo "🚀 Starting deployment..."
 
-# Generate application key if not set
+# Never generate a temporary production key. Render's filesystem is ephemeral,
+# so a generated key would change after a restart and encrypted data would break.
 if [ -z "$APP_KEY" ]; then
-    echo "⚠️  APP_KEY not set, generating..."
+    if [ "$APP_ENV" = "production" ]; then
+        echo "❌ APP_KEY is required in production. Generate it once with: php artisan key:generate --show"
+        exit 1
+    fi
+
+    echo "⚠️  APP_KEY not set, generating a local development key..."
     php artisan key:generate --force
 fi
 
@@ -18,7 +24,8 @@ php artisan view:cache
 echo "📦 Running migrations..."
 php artisan migrate --force
 
-# Seed Admin user (Safe to run multiple times due to updateOrCreate)
+# Create the first admin when ADMIN_EMAIL and ADMIN_PASSWORD are configured.
+# Existing admin passwords are never overwritten by this startup seed.
 echo "🌱 Seeding Admin user..."
 php artisan db:seed --class=AdminSeeder --force
 

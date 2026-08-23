@@ -23,6 +23,16 @@ class ChatMessageResource extends JsonResource
             'is_read'     => $this->is_read,
             'read_at'     => $this->read_at,
             'created_at'  => $this->created_at,
+            'reported_by_me' => $this->whenLoaded(
+                'complianceFlags',
+                fn (): bool => $this->complianceFlags->isNotEmpty(),
+            ),
+            'can_report' => (bool) (
+                $request->user()?->isClient()
+                && $this->relationLoaded('sender')
+                && $this->sender?->isExpert()
+                && $request->user()->id !== $this->sender_id
+            ),
 
             // Relations (only when loaded)
             'sender' => new UserResource($this->whenLoaded('sender')),

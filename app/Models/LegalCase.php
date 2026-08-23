@@ -116,6 +116,11 @@ class LegalCase extends Model
         return $this->hasMany(ChatMessage::class, 'case_id');
     }
 
+    public function complianceFlags(): HasMany
+    {
+        return $this->hasMany(ComplianceFlag::class, 'case_id');
+    }
+
     /**
      * Payments related to this case.
      */

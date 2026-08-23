@@ -15,7 +15,9 @@ return [
     |
     */
 
-    'default' => env('BROADCAST_CONNECTION', 'log'),
+    // Laravel normalizes the literal env value "null" to PHP null. Fall back
+    // to the silent null driver instead of logging confidential chat content.
+    'default' => env('BROADCAST_CONNECTION', 'null') ?: 'null',
 
     /*
     |--------------------------------------------------------------------------

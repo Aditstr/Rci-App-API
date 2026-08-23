@@ -43,6 +43,7 @@ Route::prefix('paralegal')->group(function () {
 Route::prefix('lawyer')->group(function () {
     Route::get('/',        fn() => view('lawyer.dashboard'));
     Route::get('/cases',   fn() => view('lawyer.cases'));
+    Route::get('/cases/{id}', fn() => view('paralegal.case-detail'));
     Route::get('/revenue', fn() => view('lawyer.revenue'));
     Route::get('/wallet',  fn() => view('lawyer.wallet'));
 });

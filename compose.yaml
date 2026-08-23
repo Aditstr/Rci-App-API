@@ -1,0 +1,42 @@
+name: rci-app
+
+services:
+  database:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_DATABASE}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    depends_on:
+      database:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8000:10000"
+    volumes:
+      - app-storage:/var/www/html/storage
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:10000/up"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+volumes:
+  postgres-data:
+  app-storage:

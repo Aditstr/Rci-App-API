@@ -15,10 +15,14 @@ Sistem ini memfasilitasi alur manajemen kasus secara *end-to-end* dengan peran g
 - **Modul Dashboard Ahli Hukum (Lawyer):** Pendelegasian (*Escalation*), fitur pengajuan penawaran harga layanan hukum (*Quotation* & *Fee Split*), serta riwayat royalti *Professional Revenue*.
 
 ## 🚀 Teknologi yang Digunakan
-* **Framework:** [Laravel 11.x](https://laravel.com/) (PHP)
+* **Framework:** [Laravel 12.x](https://laravel.com/) (PHP 8.3 pada image Docker)
 * **Database:** MySQL / PostgreSQL (terkoneksi Eloquent ORM)
 * **Autentikasi:** Laravel Sanctum
 * **Arsitektur:** RESTful API
+
+## 🌐 Deploy ke Render dan Handoff
+
+Sebelum menyerahkan repository atau membuat service production, ikuti [catatan fitur, cara kerja, keamanan, dan urutan deploy Render](docs/DEPLOY_RENDER.md). Dokumen tersebut mencakup PostgreSQL, Google OAuth, private object storage, Xendit, bootstrap admin, serta verifikasi fitur anti-pembayaran di luar RCI.
 
 ## 📋 Prasyarat Instalasi (Lokasi)
 Pastikan sistem komputer Anda telah dipasang beberapa komponen vital:
@@ -84,7 +88,7 @@ PDF belum didukung oleh importer ini. Salin teks dari sumber resmi ke `.txt`/`.m
 ## 📚 Dokumentasi API
 Anda dapat menjelajahi titik-akhir API (*Endpoints*) serta parameternya dengan mengacu pada rancangan kontroler yang ada pada direktori:
 * `routes/api.php`
-* *Documentation Markdown yang menyertai proyek pada internal tim.*
+* [`docs/API_DOCUMENTATION.md`](docs/API_DOCUMENTATION.md)
 
 ## 🔒 Lisensi
 RCI App dan repositori API ini bersifat privat / hak kepemilikan terbatas (*Proprietary software*).

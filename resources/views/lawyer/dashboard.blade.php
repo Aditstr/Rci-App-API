@@ -176,7 +176,8 @@ window.onUserLoaded = function(user) {
         fetch('/api/v1/expert/cases', {
             headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' }
         }).then(r => r.json()).then(d => {
-            renderCases(d.data || []);
+            const payload = d.data || [];
+            renderCases(Array.isArray(payload) ? payload : (payload.data || []));
         }).catch(() => {
             document.getElementById('lawyer-cases').innerHTML = '<div style="text-align:center; padding:40px; color:rgba(7,6,7,0.4);">Gagal memuat kasus.</div>';
         });

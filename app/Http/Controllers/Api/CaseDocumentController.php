@@ -35,8 +35,9 @@ class CaseDocumentController extends Controller
         $safeName     = preg_replace('/[^A-Za-z0-9\-\_\.]/', '_', $originalName);
         $fileName     = time() . '_' . $safeName;
         
-        // Store in local storage (NOT public) inside a 'cases/{id}' directory for security
-        $path = $file->storeAs("cases/{$case->id}", $fileName, 'local');
+        // Store on the configured private default disk. Production can use
+        // private S3-compatible storage instead of Render's ephemeral disk.
+        $path = $file->storeAs("cases/{$case->id}", $fileName);
 
         // Save to database
         $document = CaseDocument::create([

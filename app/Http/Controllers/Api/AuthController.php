@@ -221,6 +221,12 @@ class AuthController extends Controller
             
             $user = User::where('email', $googleUser->getEmail())->first();
 
+            if ($user && ! $user->is_active) {
+                $user->tokens()->delete();
+                $frontendUrl = config('app.frontend_url', config('app.url'));
+                return redirect("{$frontendUrl}/auth/google/callback#error=account_suspended");
+            }
+
             // Ambil role dari parameter state jika ada
             $intendedRole = 'client';
             if ($request->has('state')) {
@@ -239,7 +245,9 @@ class AuthController extends Controller
                     'avatar_url'        => $googleUser->getAvatar(),
                     'role'              => $intendedRole,
                     'email_verified_at' => now(), // Google sudah verifikasi email
-                    'is_verified'       => true,
+                    // PDO PostgreSQL with emulated prepares serializes PHP true as 1.
+                    // Use a native PostgreSQL boolean literal to avoid a type mismatch.
+                    'is_verified'       => \Illuminate\Support\Facades\DB::raw('TRUE'),
                     // password remains null
                 ]);
 
@@ -432,8 +440,8 @@ class AuthController extends Controller
 
         // Delete old files safely after DB commit
         foreach ($oldPaths as $path) {
-            if ($path && Storage::disk('local')->exists($path)) {
-                Storage::disk('local')->delete($path);
+            if ($path && Storage::disk()->exists($path)) {
+                Storage::disk()->delete($path);
             }
         }
 

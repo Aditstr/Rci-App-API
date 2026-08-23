@@ -273,18 +273,18 @@
                 <form id="login-form" onsubmit="event.preventDefault(); auth.login();">
                     <div class="form-group">
                         <label>Email</label>
-                        <input type="email" id="login-email" class="form-control" required value="admin@rci-app.com">
+                        <input type="email" id="login-email" class="form-control" required autocomplete="email">
                     </div>
                     <div class="form-group">
                         <label>Password</label>
-                        <input type="password" id="login-password" class="form-control" required value="RciAdmin@2026!">
+                        <input type="password" id="login-password" class="form-control" required autocomplete="current-password">
                     </div>
                     <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Login Biasa</button>
                 </form>
                 
                 <div style="margin-top: 15px; text-align: center;">
                     <p style="color: var(--text-muted); margin-bottom: 5px; font-size: 14px;">Atau masuk dengan:</p>
-                    <a href="http://localhost:8000/api/v1/auth/google" class="btn btn-google">🌐 Login dengan Google</a>
+                    <a href="/api/v1/auth/google" class="btn btn-google">🌐 Login dengan Google</a>
                 </div>
 
                 <p style="text-align: center; margin-top: 20px; font-size: 14px; color: var(--text-muted);">
@@ -326,7 +326,7 @@
 
                 <div style="margin-top: 15px; text-align: center;">
                     <p style="color: var(--text-muted); margin-bottom: 5px; font-size: 14px;">Atau daftar dengan:</p>
-                    <a href="http://localhost:8000/api/v1/auth/google" class="btn btn-google">🌐 Daftar dengan Google</a>
+                    <a href="/api/v1/auth/google" class="btn btn-google">🌐 Daftar dengan Google</a>
                 </div>
             </div>
         </div>

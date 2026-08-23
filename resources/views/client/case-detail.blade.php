@@ -31,8 +31,10 @@
                 <p style="font-size:15px;line-height:1.7;color:rgba(7,6,7,0.75);" id="case-desc-display">—</p>
             </div>
 
+            @include('partials.payment-safety-notice', ['audience' => 'client'])
+
             <!-- Chat -->
-            <div class="chat-container" style="height:400px;">
+            <div class="chat-container" style="height:440px;">
                 <div style="padding:16px 24px;border-bottom:1.5px dotted var(--color-pumice);">
                     <h3 class="font-display" style="font-size:20px;letter-spacing:0.02em;">OBROLAN KASUS</h3>
                 </div>
@@ -73,8 +75,13 @@
 (function() {
 const token = localStorage.getItem('rci_token');
 const caseId = window.location.pathname.split('/').pop();
+let currentUserId = null;
 
-window.onUserLoaded = function() { loadCase(); };
+window.onUserLoaded = function(user) { currentUserId = user.id; loadCase(); };
+
+function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>'"]/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#039;','"':'&quot;'}[char]));
+}
 
 function loadCase() {
     fetch('/api/v1/cases/'+caseId, { headers: { 'Authorization': 'Bearer '+token, 'Accept': 'application/json' }})
@@ -88,8 +95,9 @@ function loadCase() {
             document.getElementById('case-desc-display').textContent = c.description || '—';
             document.getElementById('case-meta').textContent = `${(c.case_type||'umum').replace('_',' ')} · Dibuat ${new Date(c.created_at).toLocaleDateString('id-ID')}`;
 
+            const normalizedStatus = String(c.status || '').toUpperCase();
             const statusMap = {PENDING:{bg:'#f5f28e',color:'#070607',label:'Menunggu'},IN_PROGRESS:{bg:'#524ae9',color:'#fff',label:'Berlangsung'},ESCALATED:{bg:'#fc5000',color:'#fff',label:'Eskalasi'},COMPLETED:{bg:'#070607',color:'#fff',label:'Selesai'},CANCELLED:{bg:'#e2e2df',color:'rgba(7,6,7,0.5)',label:'Dibatalkan'}};
-            const s = statusMap[c.status] || {bg:'#e2e2df',color:'#070607',label:c.status};
+            const s = statusMap[normalizedStatus] || {bg:'#e2e2df',color:'#070607',label:c.status};
             const badge = document.getElementById('case-status-badge');
             badge.textContent = s.label; badge.style.background = s.bg; badge.style.color = s.color;
 
@@ -115,7 +123,7 @@ function loadCase() {
 function renderActions(c) {
     const el = document.getElementById('case-actions');
     const acts = [];
-    if (['PENDING','IN_PROGRESS','ESCALATED'].includes(c.status)) {
+    if (['PENDING','IN_PROGRESS','ESCALATED'].includes(String(c.status || '').toUpperCase())) {
         acts.push(`<button onclick="confirmComplete()" class="btn-primary" style="width:100%;padding:12px;">✓ Konfirmasi Selesai</button>`);
         acts.push(`<button onclick="disputeCase()" class="btn-secondary" style="width:100%;padding:12px;">⚠ Ajukan Sengketa</button>`);
         acts.push(`<button onclick="cancelCase()" class="btn-ghost" style="width:100%;padding:12px;color:rgba(7,6,7,0.4);">✕ Batalkan Kasus</button>`);
@@ -135,10 +143,17 @@ function loadMessages() {
             if (!msgs.length) { el.innerHTML = '<div style="text-align:center;padding:24px;color:rgba(7,6,7,0.4);font-size:13px;">Belum ada pesan.</div>'; return; }
             el.innerHTML = msgs.map(m => {
                 const role = m.sender ? m.sender.role : 'paralegal';
-                const isMe = role === 'client';
+                const isMe = Number(m.sender_id) === Number(currentUserId);
+                const senderLabel = role === 'lawyer' ? 'Pengacara' : 'Paralegal';
+                const reportControl = !isMe && m.can_report
+                    ? (m.reported_by_me
+                        ? '<span style="font-size:11px;margin-top:7px;display:inline-block;opacity:.6;">✓ Sudah dilaporkan</span>'
+                        : `<button type="button" data-testid="report-message-${m.id}" onclick="reportMessage(${Number(m.id)})" style="font-size:11px;margin-top:7px;padding:0;border:0;background:transparent;color:var(--color-ember);text-decoration:underline;cursor:pointer;">Laporkan permintaan pembayaran di luar RCI</button>`)
+                    : '';
                 return `<div class="chat-message ${isMe?'chat-message-user':'chat-message-ai'}">
-                    <p style="font-size:14px;line-height:1.5;">${m.message}</p>
-                    <p style="font-size:11px;margin-top:4px;opacity:0.5;">${isMe ? 'Anda' : 'Paralegal'} · ${new Date(m.created_at).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}</p>
+                    <p style="font-size:14px;line-height:1.5;">${escapeHtml(m.message).replace(/\n/g, '<br>')}</p>
+                    <p style="font-size:11px;margin-top:4px;opacity:0.5;">${isMe ? 'Anda' : senderLabel} · ${new Date(m.created_at).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}</p>
+                    ${reportControl}
                 </div>`;
             }).join('');
             if (isAtBottom || window.justSentMsg) {
@@ -153,13 +168,34 @@ async function sendMsg() {
     const text = input.value.trim();
     if (!text) return;
     input.value = '';
-    await fetch('/api/v1/cases/'+caseId+'/messages', {
+    const response = await fetch('/api/v1/cases/'+caseId+'/messages', {
         method: 'POST',
         headers: { 'Authorization': 'Bearer '+token, 'Accept': 'application/json', 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: text })
     });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+        input.value = text;
+        showToast(data.message || 'Pesan gagal dikirim.', 'error');
+        return;
+    }
     window.justSentMsg = true;
     loadMessages();
+}
+
+async function reportMessage(messageId) {
+    if (!confirm('Laporkan pesan ini sebagai permintaan pembayaran di luar RCI?')) return;
+    const notes = prompt('Tambahkan keterangan untuk tim RCI (opsional):', '');
+    if (notes === null) return;
+
+    const response = await fetch(`/api/v1/cases/${caseId}/messages/${messageId}/report`, {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer '+token, 'Accept': 'application/json', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notes: notes.trim() || null })
+    });
+    const data = await response.json().catch(() => ({}));
+    showToast(data.message || (response.ok ? 'Laporan diterima.' : 'Laporan gagal dikirim.'), response.ok ? 'info' : 'error');
+    if (response.ok || response.status === 409) loadMessages();
 }
 
 async function confirmComplete() { await caseAction('confirm-completion'); showToast('Kasus dikonfirmasi selesai!'); }
@@ -176,6 +212,7 @@ async function caseAction(action) {
     loadCase();
 }
 window.sendMsg = sendMsg;
+window.reportMessage = reportMessage;
 window.confirmComplete = confirmComplete;
 window.disputeCase     = disputeCase;
 window.cancelCase      = cancelCase;

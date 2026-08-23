@@ -3,6 +3,7 @@
 namespace Tests\Feature\Api;
 
 use App\Models\ChatMessage;
+use App\Models\ComplianceFlag;
 use App\Models\LegalCase;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -124,5 +125,66 @@ class ChatRoomTest extends TestCase
         
         $message = ChatMessage::where('message', 'Hello from expert!')->first();
         $this->assertNotNull($message->read_at);
+    }
+
+    public function test_high_risk_expert_payment_request_is_blocked_and_flagged(): void
+    {
+        $response = $this->actingAs($this->expert)->postJson("/api/v1/expert/cases/{$this->case->id}/messages", [
+            'message' => 'Transfer langsung ke rekening pribadi saya BCA 1234567890.',
+        ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('code', 'OFF_PLATFORM_PAYMENT_BLOCKED');
+
+        $this->assertDatabaseCount('chat_messages', 0);
+        $this->assertDatabaseHas('compliance_flags', [
+            'case_id' => $this->case->id,
+            'subject_user_id' => $this->expert->id,
+            'source' => ComplianceFlag::SOURCE_AUTOMATIC,
+            'severity' => 'high',
+            'status' => 'pending',
+        ]);
+    }
+
+    public function test_client_can_report_expert_message_once(): void
+    {
+        $message = ChatMessage::create([
+            'case_id' => $this->case->id,
+            'sender_id' => $this->expert->id,
+            'message' => 'Silakan lanjutkan pembahasan biaya.',
+            'attachments' => [],
+        ]);
+
+        $endpoint = "/api/v1/cases/{$this->case->id}/messages/{$message->id}/report";
+
+        $this->actingAs($this->client)->postJson($endpoint, [
+            'notes' => 'Saya juga diminta menghubungi nomor pribadi.',
+        ])->assertCreated()
+            ->assertJsonPath('success', true);
+
+        $this->actingAs($this->client)->postJson($endpoint)
+            ->assertStatus(409);
+
+        $this->assertDatabaseHas('compliance_flags', [
+            'message_id' => $message->id,
+            'reporter_id' => $this->client->id,
+            'subject_user_id' => $this->expert->id,
+            'source' => ComplianceFlag::SOURCE_USER_REPORT,
+            'status' => 'pending',
+        ]);
+    }
+
+    public function test_suspended_user_is_denied_and_all_tokens_are_revoked(): void
+    {
+        $token = $this->client->createToken('suspended-test')->plainTextToken;
+        $this->client->update(['is_active' => false]);
+
+        $this->getJson('/api/v1/auth/me', [
+            'Authorization' => "Bearer {$token}",
+        ])->assertForbidden()
+            ->assertJsonPath('code', 'ACCOUNT_SUSPENDED');
+
+        $this->assertDatabaseCount('personal_access_tokens', 0);
     }
 }

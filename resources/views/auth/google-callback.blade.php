@@ -63,6 +63,7 @@
         document.getElementById('state-error').style.display = 'block';
         const msgs = {
             'google_auth_failed': 'Autentikasi Google gagal. Pastikan Anda mengizinkan akses yang diminta.',
+            'account_suspended': 'Akun Anda sedang dinonaktifkan karena pemeriksaan kepatuhan. Silakan hubungi admin RCI.',
         };
         document.getElementById('error-message').textContent = msgs[error] || 'Terjadi kesalahan. Silakan coba lagi.';
         return;

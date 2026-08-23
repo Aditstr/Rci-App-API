@@ -104,6 +104,11 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser
         return $this->hasMany(ChatMessage::class, 'sender_id');
     }
 
+    public function complianceFlags(): HasMany
+    {
+        return $this->hasMany(ComplianceFlag::class, 'subject_user_id');
+    }
+
     /**
      * Subscriptions owned by this user.
      */
@@ -151,7 +156,7 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser
      */
     public function canAccessPanel(Panel $panel): bool
     {
-        return $this->isAdmin();
+        return $this->isAdmin() && $this->is_active;
     }
 
     public function isLawyer(): bool
