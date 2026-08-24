@@ -89,9 +89,58 @@ class CaseEscalationTest extends TestCase
             'expert_id' => $this->lawyer->id,
         ]);
 
+        $this->actingAs($this->lawyer)
+            ->getJson('/api/v1/expert/cases')
+            ->assertOk()
+            ->assertJsonPath('data.data.0.id', $this->case->id)
+            ->assertJsonPath('data.data.0.status', 'escalated');
+
+        $this->actingAs($this->lawyer)
+            ->getJson('/api/v1/lawyer/dashboard/stats')
+            ->assertOk()
+            ->assertJsonPath('data.new_referrals_count', 1);
+
         // Assert notification sent to lawyer and client
         Notification::assertSentTo($this->lawyer, \App\Notifications\CaseStatusUpdated::class);
         Notification::assertSentTo($this->client, \App\Notifications\CaseStatusUpdated::class);
+    }
+
+    public function test_paralegal_can_list_only_active_verified_lawyers()
+    {
+        $inactiveLawyer = User::factory()->create([
+            'role' => 'lawyer',
+            'is_active' => false,
+        ]);
+        ExpertProfile::create([
+            'user_id' => $inactiveLawyer->id,
+            'license_number' => 'L-77777',
+            'verification_status' => 'approved',
+            'is_verified' => true,
+        ]);
+
+        $response = $this->actingAs($this->paralegal1)
+            ->getJson('/api/v1/paralegal/lawyers');
+
+        $response->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $this->lawyer->id)
+            ->assertJsonPath('data.0.name', $this->lawyer->name);
+    }
+
+    public function test_escalation_requires_a_lawyer_id_and_does_not_change_the_case()
+    {
+        $response = $this->actingAs($this->paralegal1)
+            ->postJson("/api/v1/paralegal/cases/{$this->case->id}/escalate");
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors('lawyer_id');
+
+        $this->assertDatabaseHas('cases', [
+            'id' => $this->case->id,
+            'status' => 'in_progress',
+            'expert_id' => $this->paralegal1->id,
+        ]);
     }
 
     public function test_paralegal_cannot_escalate_case_assigned_to_someone_else()

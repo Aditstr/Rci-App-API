@@ -141,6 +141,7 @@
         </div>
     </div>
 </div>
+@include('partials.escalation-modal')
 @endsection
 
 @push('scripts')
@@ -323,14 +324,9 @@ function updateStatusManual(id, newStatus) {
 }
 
 function escalateCase(id) {
-    if (!confirm('Eskalasi kasus ini ke Pengacara?')) return;
-    fetch(`/api/v1/paralegal/cases/${id}/escalate`, {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' }
-    }).then(r => r.json()).then(d => {
-        showToast('Kasus berhasil dieskalasi!');
+    openEscalationModal(id, function() {
         loadKanban();
-    }).catch(() => showToast('Gagal eskalasi', 'error'));
+    });
 }
 window.updateStatusManual = updateStatusManual;
 window.escalateCase = escalateCase;

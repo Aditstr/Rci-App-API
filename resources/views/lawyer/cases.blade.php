@@ -35,7 +35,7 @@
 <!-- Filter tabs -->
 <div style="display:flex; gap:8px; margin-bottom:24px; flex-wrap:wrap;" id="filter-tabs">
     <button onclick="filterCases('all', this)" class="tag" style="cursor:pointer;border:none;padding:8px 16px;font-size:14px;background:var(--color-ember);color:white;">Semua</button>
-    <button onclick="filterCases('ESCALATED', this)" class="tag" style="cursor:pointer;border:none;padding:8px 16px;font-size:14px;">Eskalasi</button>
+    <button onclick="filterCases('escalated', this)" class="tag" style="cursor:pointer;border:none;padding:8px 16px;font-size:14px;">Eskalasi</button>
     <button onclick="filterCases('active', this)" class="tag" style="cursor:pointer;border:none;padding:8px 16px;font-size:14px;">Aktif</button>
     <button onclick="filterCases('completed', this)" class="tag" style="cursor:pointer;border:none;padding:8px 16px;font-size:14px;">Selesai</button>
 </div>
@@ -96,12 +96,13 @@
             return;
         }
         const statusColors = {
-            ESCALATED: {bg:'#524ae9', color:'#fff', label:'Eskalasi'},
+            escalated: {bg:'#524ae9', color:'#fff', label:'Eskalasi'},
             active:    {bg:'#22c55e', color:'#fff', label:'Aktif'},
             completed: {bg:'#070607', color:'#fff', label:'Selesai'},
         };
         el.innerHTML = cases.map(c => {
-            const s = statusColors[c.status] || {bg:'#e2e2df', color:'#070607', label: c.status};
+            const normalizedStatus = String(c.status || '').toLowerCase();
+            const s = statusColors[normalizedStatus] || {bg:'#e2e2df', color:'#070607', label: c.status};
             return `<div style="display:flex;align-items:center;gap:16px;padding:20px 0;border-bottom:1.5px dotted var(--color-pumice);flex-wrap:wrap;">
                 <div style="flex:1;min-width:200px;">
                     <p style="font-weight:600;font-size:15px;margin-bottom:4px;">${c.title || 'Kasus #' + c.id}</p>
@@ -120,7 +121,9 @@
     function filterCases(status, btn) {
         document.querySelectorAll('#filter-tabs .tag').forEach(b => { b.style.background = 'var(--color-sulfur)'; b.style.color = 'var(--color-obsidian)'; });
         btn.style.background = 'var(--color-ember)'; btn.style.color = 'white';
-        const filtered = status === 'all' ? allCases : allCases.filter(c => c.status === status || c.status?.toLowerCase() === status);
+        const filtered = status === 'all'
+            ? allCases
+            : allCases.filter(c => String(c.status || '').toLowerCase() === status.toLowerCase());
         renderCases(filtered);
     }
 
@@ -147,7 +150,10 @@
             const res = await fetch(`/api/v1/lawyer/cases/${quotingCaseId}/quote`, {
                 method: 'POST',
                 headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json', 'Content-Type': 'application/json' },
-                body: JSON.stringify({ amount, notes: notes || 'Penawaran harga layanan hukum profesional.' })
+                body: JSON.stringify({
+                    proposed_fee: amount,
+                    fee_notes: notes || 'Penawaran harga layanan hukum profesional.'
+                })
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.message || 'Gagal mengirim penawaran');

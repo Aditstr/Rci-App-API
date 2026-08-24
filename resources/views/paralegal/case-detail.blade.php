@@ -81,6 +81,7 @@
         </div>
     </div>
 </div>
+@include('partials.escalation-modal')
 @endsection
 
 @push('scripts')
@@ -204,13 +205,9 @@ async function expertComplete() {
 }
 
 async function escalateCase() { 
-    if(!confirm('Eskalasi kasus ini ke Pengacara?')) return;
-    await fetch(`/api/v1/paralegal/cases/${caseId}/escalate`, {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer '+token, 'Accept': 'application/json' }
+    openEscalationModal(caseId, function() {
+        window.location.href = '/paralegal';
     });
-    showToast('Kasus berhasil dieskalasi.');
-    loadCase();
 }
 
 window.sendMsg = sendMsg;

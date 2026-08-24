@@ -191,6 +191,7 @@ Route::prefix('v1')->group(function () {
     Route::middleware(['auth:sanctum', 'active', 'verified', 'role:paralegal', 'expert.verified'])->prefix('paralegal')->group(function () {
         // Stats & Kanban Board
         Route::get('/dashboard/stats', [ParalegalDashboardController::class, 'stats'])->name('api.v1.paralegal.stats');
+        Route::get('/lawyers',         [ParalegalDashboardController::class, 'lawyers'])->name('api.v1.paralegal.lawyers');
         Route::get('/cases',           [ParalegalDashboardController::class, 'cases'])->name('api.v1.paralegal.cases');
         Route::get('/cases/{id}',      [ParalegalDashboardController::class, 'show'])->name('api.v1.paralegal.cases.show');
         Route::post('/cases',          [ParalegalDashboardController::class, 'storeCase'])->name('api.v1.paralegal.cases.store');

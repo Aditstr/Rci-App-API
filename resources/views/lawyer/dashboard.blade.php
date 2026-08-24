@@ -145,9 +145,7 @@ window.onUserLoaded = function(user) {
     const expert = user.expert_profile;
     
     // Alur Onboarding / Pending
-    if (expert.verification_status === 'approved') {
-        document.getElementById('dashboard-container').style.display = 'block';
-    } else if (!expert || !expert.has_documents) {
+    if (!expert || (!expert.has_documents && expert.verification_status !== 'approved')) {
         document.getElementById('onboarding-container').style.display = 'block';
         fetchSOP();
     } else if (expert.verification_status === 'pending' || expert.verification_status === 'rejected') {
@@ -165,10 +163,11 @@ window.onUserLoaded = function(user) {
             headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' }
         }).then(r => r.json()).then(d => {
             const s = d.data || d;
-            document.getElementById('l-active').textContent  = s.active_cases ?? '—';
-            document.getElementById('l-done').textContent    = s.completed_cases ?? '—';
-            document.getElementById('l-revenue').textContent = s.total_revenue ? 'Rp '+Number(s.total_revenue).toLocaleString('id-ID') : '—';
-            document.getElementById('l-rating').textContent  = s.average_rating ? Number(s.average_rating).toFixed(1)+' ★' : '—';
+            const activeCases = Number(s.new_referrals_count || 0) + Number(s.active_cases_count || 0);
+            document.getElementById('l-active').textContent  = activeCases;
+            document.getElementById('l-done').textContent    = s.completed_count ?? '0';
+            document.getElementById('l-revenue').textContent = 'Rp '+Number(s.total_revenue || 0).toLocaleString('id-ID');
+            document.getElementById('l-rating').textContent  = Number(s.rating || 0).toFixed(1)+' ★';
             document.getElementById('l-monthly').textContent = s.monthly_revenue ? 'Rp '+Number(s.monthly_revenue).toLocaleString('id-ID') : 'Rp 0';
         }).catch(() => {});
 
@@ -197,7 +196,7 @@ function renderCases(cases) {
                 <p style="font-weight:500;font-size:15px;margin-bottom:4px;">${c.title || 'Kasus #'+c.id}</p>
                 <p style="font-size:12px;color:rgba(7,6,7,0.45);">Tipe: ${c.case_type || '—'} · ${new Date(c.created_at).toLocaleDateString('id-ID')}</p>
             </div>
-            <span class="tag" style="background:${c.status==='ESCALATED'?'#524ae9':'#fc5000'};color:white;">${c.status}</span>
+            <span class="tag" style="background:${String(c.status || '').toLowerCase()==='escalated'?'#524ae9':'#fc5000'};color:white;">${c.status}</span>
             <button onclick="openQuote(${c.id})" class="btn-primary" style="padding:8px 16px;font-size:13px;">Beri Penawaran</button>
         </div>
     `).join('');
@@ -278,7 +277,7 @@ function openQuote(caseId) {
     fetch(`/api/v1/lawyer/cases/${caseId}/quote`, {
         method: 'POST',
         headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json', 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: parseInt(fee), notes: 'Penawaran harga layanan hukum.' })
+        body: JSON.stringify({ proposed_fee: parseInt(fee), fee_notes: 'Penawaran harga layanan hukum.' })
     }).then(r => {
         if (!r.ok) throw new Error('Gagal mengirim penawaran');
         showToast('Penawaran berhasil dikirim!');

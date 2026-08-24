@@ -76,8 +76,8 @@
             const s = d.data || d;
             document.getElementById('r-total').textContent   = s.total_revenue ? 'Rp ' + Number(s.total_revenue).toLocaleString('id-ID') : 'Rp 0';
             document.getElementById('r-monthly').textContent = s.monthly_revenue ? 'Rp ' + Number(s.monthly_revenue).toLocaleString('id-ID') : 'Rp 0';
-            document.getElementById('r-cases').textContent   = s.completed_cases ?? '0';
-            document.getElementById('r-rating').textContent  = s.average_rating ? Number(s.average_rating).toFixed(1) + ' ★' : '—';
+            document.getElementById('r-cases').textContent   = s.completed_count ?? '0';
+            document.getElementById('r-rating').textContent  = Number(s.rating || 0).toFixed(1) + ' ★';
         }).catch(() => {});
 
         // Load wallet transactions

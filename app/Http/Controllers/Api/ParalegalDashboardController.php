@@ -109,6 +109,40 @@ class ParalegalDashboardController extends Controller
     }
 
     /**
+     * Dapatkan daftar pengacara aktif yang sudah diverifikasi untuk tujuan eskalasi.
+     *
+     * GET /api/paralegal/lawyers
+     */
+    public function lawyers(): JsonResponse
+    {
+        $lawyers = User::query()
+            ->where('role', 'lawyer')
+            ->where('is_active', true)
+            ->whereHas('expertProfile', function ($query) {
+                $query->where('verification_status', 'approved');
+            })
+            ->with('expertProfile')
+            ->orderBy('name')
+            ->get()
+            ->map(function (User $lawyer): array {
+                return [
+                    'id'                  => $lawyer->id,
+                    'name'                => $lawyer->name,
+                    'specializations'     => $lawyer->expertProfile?->specialization_tags ?? [],
+                    'experience_years'    => $lawyer->expertProfile?->experience_years ?? 0,
+                    'rating'              => $lawyer->expertProfile?->rating ?? 0,
+                    'current_workload'    => $lawyer->expertProfile?->current_workload ?? 0,
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Daftar pengacara terverifikasi berhasil dimuat.',
+            'data'    => $lawyers,
+        ]);
+    }
+
+    /**
      * Memperbarui status / memindahkan kartu di Board Kanban
      * 
      * POST /api/paralegal/cases/{id}/status
@@ -158,6 +192,7 @@ class ParalegalDashboardController extends Controller
 
         // Cari advokat yang sah dan terverifikasi
         $lawyer = User::where('role', 'lawyer')
+            ->where('is_active', true)
             ->whereHas('expertProfile', function ($query) {
                 $query->where('verification_status', 'approved');
             })
@@ -312,4 +347,3 @@ class ParalegalDashboardController extends Controller
         return $map[strtolower(trim($category))] ?? 'general';
     }
 }
-

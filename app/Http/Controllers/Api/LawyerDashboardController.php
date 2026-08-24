@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\LegalCaseResource;
 use App\Models\LegalCase;
+use App\Models\WalletTransaction;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -18,7 +19,7 @@ class LawyerDashboardController extends Controller
      */
     public function stats(Request $request): JsonResponse
     {
-        $user = $request->user()->load('expertProfile');
+        $user = $request->user()->load(['expertProfile', 'wallet']);
 
         // Rujukan Baru (Kasus dari paralegal yang di-escalated dan ditugaskan ke role lawyer ini)
         $newReferralsCount = LegalCase::where('expert_id', $user->id)
@@ -38,6 +39,17 @@ class LawyerDashboardController extends Controller
         // Rating pengacara
         $rating = $user->expertProfile ? $user->expertProfile->rating : 0.0;
 
+        // Pendapatan profesional yang benar-benar sudah masuk ke wallet.
+        $revenueQuery = WalletTransaction::query()
+            ->where('wallet_id', $user->wallet?->id ?? 0)
+            ->where('type', 'payment_release')
+            ->where('status', 'success');
+
+        $totalRevenue = (clone $revenueQuery)->sum('amount');
+        $monthlyRevenue = (clone $revenueQuery)
+            ->where('created_at', '>=', now()->startOfMonth())
+            ->sum('amount');
+
         return response()->json([
             'success' => true,
             'message' => 'Statistik Lawyer Dashboard',
@@ -45,6 +57,8 @@ class LawyerDashboardController extends Controller
                 'new_referrals_count' => $newReferralsCount,
                 'active_cases_count'  => $activeCasesCount,
                 'completed_count'     => $completedCount,
+                'total_revenue'       => $totalRevenue,
+                'monthly_revenue'     => $monthlyRevenue,
                 'rating'              => $rating,
             ]
         ]);
@@ -110,4 +124,3 @@ class LawyerDashboardController extends Controller
         ]);
     }
 }
-
