@@ -89,25 +89,17 @@
   --card-padding: 40px;
 }
 
-/* ── Base Reset ── */
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
+/* ── Base ── */
 html {
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
 }
 
 body {
-  background-color: var(--color-pumice);
+  background-color: #ffffff;
   color: var(--color-obsidian);
   font-family: var(--font-dm-sans);
-  font-weight: 500;
+  font-weight: 400;
   font-size: var(--text-body);
   line-height: 1.55;
   min-height: 100vh;

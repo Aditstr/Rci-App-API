@@ -12,7 +12,7 @@ const showNavbar = computed(() => {
 </script>
 
 <template>
-    <div class="min-h-screen flex flex-col bg-[#e2e2df] text-[#070607]">
+    <div class="min-h-screen flex flex-col bg-white text-slate-900">
         <AppNavbar v-if="showNavbar" />
         <main class="flex-1">
             <router-view v-slot="{ Component }">

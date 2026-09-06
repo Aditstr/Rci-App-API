@@ -18,7 +18,7 @@ const handleLogout = async () => {
 
 <template>
     <nav class="sticky top-0 z-50 w-full border-b border-slate-200/80 bg-white/85 backdrop-blur-md transition-all">
-        <div class="max-w-7xl mx-auto flex items-center justify-between px-4 sm:px-8 py-3.5">
+        <div class="max-w-7xl mx-auto flex items-center justify-between px-6 sm:px-8 py-3.5">
             <!-- Logo -->
             <router-link to="/" class="flex items-center gap-2.5 text-inherit no-underline group">
                 <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-[#fc5000] to-orange-600 text-white flex items-center justify-center font-bold text-base shadow-sm group-hover:scale-105 transition-transform">

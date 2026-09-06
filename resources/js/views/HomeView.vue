@@ -52,7 +52,7 @@ const startAiChat = (customText = null) => {
                 </router-link>
 
                 <!-- Hero Headline -->
-                <h1 class="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-slate-950 max-w-4xl leading-[1.15] mb-6">
+                <h1 class="text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-slate-950 max-w-3xl leading-[1.15] mb-6">
                     Solusi Hukum Cerdas untuk <br class="hidden sm:inline" />
                     <span class="bg-gradient-to-r from-[#fc5000] via-orange-600 to-amber-500 bg-clip-text text-transparent">
                         Bisnis & Personal
@@ -167,13 +167,13 @@ const startAiChat = (customText = null) => {
 
         <!-- Services Section -->
         <section id="layanan" class="bg-white py-20 sm:py-28 border-t border-slate-200/80">
-            <div class="max-w-6xl mx-auto px-4 sm:px-6">
+            <div class="max-w-6xl mx-auto px-6 sm:px-8 lg:px-12">
                 
                 <div class="text-center max-w-2xl mx-auto mb-16">
                     <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-orange-50 text-orange-700 border border-orange-200/80 mb-4">
                         Pilihan Layanan RCI
                     </span>
-                    <h2 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-950 mb-4">
+                    <h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-slate-950 mb-4">
                         Ekosistem Hukum Fleksibel Sesuai Kebutuhan
                     </h2>
                     <p class="text-slate-600 text-sm sm:text-base leading-relaxed">
@@ -181,7 +181,7 @@ const startAiChat = (customText = null) => {
                     </p>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 items-stretch">
                     
                     <!-- Tier 1: AI -->
                     <div class="bg-slate-50/70 rounded-2xl border border-slate-200 p-8 flex flex-col justify-between hover:shadow-lg hover:border-slate-300 transition-all">
@@ -289,7 +289,7 @@ const startAiChat = (customText = null) => {
         </section>
 
         <!-- Footer -->
-        <footer class="bg-slate-950 text-white py-12 px-4 sm:px-6 border-t border-slate-900">
+        <footer class="bg-slate-950 text-white py-12 px-6 sm:px-8 lg:px-12 border-t border-slate-900">
             <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
                 <div class="flex items-center gap-2.5">
                     <div class="w-7 h-7 rounded-lg bg-[#fc5000] text-white flex items-center justify-center font-bold text-sm">
