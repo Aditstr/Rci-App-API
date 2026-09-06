@@ -298,7 +298,7 @@ const startAiChat = (customText = null) => {
                     <span class="font-bold text-base tracking-tight text-white">RCI — Roys Counsel Indonesia</span>
                 </div>
                 <p class="text-xs text-slate-400 text-center sm:text-right">
-                    © 2026 Roys Counsel Indonesia. Ditenagai oleh Vue 3, Vite & Shadcn UI.
+                    © 2026 Roys Counsel Indonesia. All rights reserved.
                 </p>
             </div>
         </footer>
