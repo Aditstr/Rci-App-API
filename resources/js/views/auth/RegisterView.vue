@@ -48,7 +48,7 @@ const handleRegister = async () => {
 </script>
 
 <template>
-    <div class="min-h-screen bg-[#e2e2df] flex flex-col items-center justify-center p-4 sm:p-8">
+    <div class="min-h-screen bg-[#fafafa] flex flex-col items-center justify-center p-4 sm:p-8">
         <router-link to="/" class="flex items-center gap-3 mb-8 no-underline">
             <div class="w-12 h-12 rounded-full bg-[#fc5000] text-white flex items-center justify-center font-display text-2xl font-bold shadow-md">
                 R

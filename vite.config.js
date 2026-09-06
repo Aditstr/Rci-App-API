@@ -26,6 +26,8 @@ export default defineConfig({
         },
     },
     server: {
+        host: 'localhost',
+        port: 5173,
         watch: {
             ignored: ['**/storage/framework/views/**'],
         },

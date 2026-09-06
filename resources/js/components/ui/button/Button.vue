@@ -1,7 +1,7 @@
 <script setup>
-import { Primitive } from 'radix-vue';
-import { buttonVariants } from './index';
+import { Primitive } from 'reka-ui';
 import { cn } from '@/lib/utils';
+import { buttonVariants } from './index';
 
 const props = defineProps({
     as: {
@@ -31,7 +31,7 @@ const props = defineProps({
     <Primitive
         :as="as"
         :as-child="asChild"
-        :class="cn(buttonVariants({ variant, size }), props.class)"
+        :class="cn(buttonVariants({ variant: props.variant, size: props.size }), props.class)"
     >
         <slot />
     </Primitive>

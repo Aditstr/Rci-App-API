@@ -74,7 +74,7 @@ onMounted(() => {
 </script>
 
 <template>
-    <div class="min-h-screen bg-[#e2e2df] py-8 px-4 sm:px-8">
+    <div class="min-h-screen bg-[#fafafa] py-8 px-4 sm:px-8">
         <div class="max-w-7xl mx-auto space-y-8">
             <!-- Header greeting -->
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#f7f6f2] p-6 sm:p-8 rounded-[36px] border border-black/10 shadow-sm">
@@ -95,10 +95,12 @@ onMounted(() => {
                             Chat AI
                         </Button>
                     </router-link>
-                    <Button class="gap-2 rounded-full">
-                        <Plus class="w-4 h-4" />
-                        Buat Kasus Baru
-                    </Button>
+                    <router-link to="/client/cases/create">
+                        <Button class="gap-2 rounded-full">
+                            <Plus class="w-4 h-4" />
+                            Buat Kasus Baru
+                        </Button>
+                    </router-link>
                 </div>
             </div>
 
@@ -209,7 +211,9 @@ onMounted(() => {
                                 </td>
                                 <td class="py-4 text-black/50 text-xs">{{ c.created_at ? new Date(c.created_at).toLocaleDateString('id-ID') : '-' }}</td>
                                 <td class="py-4 text-right">
-                                    <Button variant="ghost" size="sm">Detail</Button>
+                                    <router-link :to="`/client/cases/${c.id}`">
+                                        <Button variant="ghost" size="sm">Detail</Button>
+                                    </router-link>
                                 </td>
                             </tr>
                         </tbody>

@@ -106,7 +106,7 @@ onMounted(() => {
 </script>
 
 <template>
-    <div class="min-h-screen bg-[#e2e2df] py-6 px-4 sm:px-8 flex flex-col items-center">
+    <div class="min-h-screen bg-[#fafafa] py-6 px-4 sm:px-8 flex flex-col items-center">
         <div class="w-full max-w-5xl flex-1 flex flex-col">
             <!-- Header bar -->
             <div class="flex items-center justify-between bg-[#f7f6f2] p-4 sm:p-6 rounded-[28px] border border-black/10 shadow-sm mb-4">

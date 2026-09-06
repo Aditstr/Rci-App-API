@@ -23,6 +23,7 @@ const routes = [
         component: RegisterView,
         meta: { guestOnly: true },
     },
+    // ── Client Routes ──
     {
         path: '/client',
         name: 'client.dashboard',
@@ -35,15 +36,35 @@ const routes = [
         component: AiChatView,
     },
     {
-        path: '/paralegal',
-        name: 'paralegal.dashboard',
-        component: DashboardView,
+        path: '/client/cases/create',
+        name: 'client.cases.create',
+        component: () => import('@/views/client/CreateCaseView.vue'),
         meta: { requiresAuth: true },
     },
     {
+        path: '/client/cases/:id',
+        name: 'client.cases.detail',
+        component: () => import('@/views/client/CaseDetailView.vue'),
+        meta: { requiresAuth: true },
+    },
+    {
+        path: '/client/cases/:id/chat',
+        name: 'client.cases.chat',
+        component: () => import('@/views/client/CaseChatView.vue'),
+        meta: { requiresAuth: true },
+    },
+    // ── Paralegal Routes (Phase 2 — placeholder) ──
+    {
+        path: '/paralegal',
+        name: 'paralegal.dashboard',
+        component: DashboardView, // TODO: Replace with ParalegalDashboardView
+        meta: { requiresAuth: true },
+    },
+    // ── Lawyer Routes (Phase 2 — placeholder) ──
+    {
         path: '/lawyer',
         name: 'lawyer.dashboard',
-        component: DashboardView,
+        component: DashboardView, // TODO: Replace with LawyerDashboardView
         meta: { requiresAuth: true },
     },
     {
