@@ -5,13 +5,36 @@
 @source '../../storage/framework/views/*.php';
 @source '../**/*.blade.php';
 @source '../**/*.js';
+@source '../**/*.vue';
 
 /* ─────────────────────────────────────────────────────────────
-   Caldera Design System — RCI App (Roys Counsel Indonesia)
+   Caldera Design System & Shadcn Tokens — RCI App
    forge fire on warm limestone
 ───────────────────────────────────────────────────────────── */
 
 :root {
+  /* ── Shadcn Core Tokens ── */
+  --background: 45 14% 96%;
+  --foreground: 300 8% 3%;
+  --card: 0 0% 100%;
+  --card-foreground: 300 8% 3%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 300 8% 3%;
+  --primary: 19 100% 49%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 40 8% 88%;
+  --secondary-foreground: 300 8% 3%;
+  --muted: 40 8% 92%;
+  --muted-foreground: 0 0% 45%;
+  --accent: 45 14% 92%;
+  --accent-foreground: 300 8% 3%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 40 8% 82%;
+  --input: 40 8% 82%;
+  --ring: 19 100% 49%;
+  --radius: 0.75rem;
+
   /* ── Colors ── */
   --color-ember: #fc5000;
   --color-plasma-violet: #524ae9;

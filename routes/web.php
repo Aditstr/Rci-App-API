@@ -4,20 +4,24 @@ use Illuminate\Support\Facades\Route;
 use App\Models\ExpertProfile;
 use Illuminate\Support\Facades\Storage;
 
-// ─── Public ───────────────────────────────────────────
-Route::get('/', fn() => view('welcome'));
+// ─── Public Documentation ──────────────────────────────
 Route::get('/api-docs', fn() => view('api-docs'));
+Route::get('/swagger.yaml', function () {
+    return response()->file(public_path('swagger.yaml'));
+});
 
-// ─── Auth Pages ───────────────────────────────────────
-Route::get('/login',    fn() => view('auth.login'));
-Route::get('/register', fn() => view('auth.register'));
-// Halaman ini menerima #token=xxx dari redirect Google OAuth di AuthController
+// ─── Google OAuth Hash Callback ───────────────────────
 Route::get('/auth/google/callback', fn() => view('auth.google-callback'));
 
-// ─── Client Dashboard ─────────────────────────────────
+// ─── Vue 3 SPA Primary Routes ─────────────────────────
+Route::get('/', fn() => view('app'));
+Route::get('/login', fn() => view('app'));
+Route::get('/register', fn() => view('app'));
+Route::get('/client', fn() => view('app'));
+Route::get('/client/ai-chat', fn() => view('app'));
+
+// ─── Preserved Production Sub-Pages (Blade) ────────────
 Route::prefix('client')->group(function () {
-    Route::get('/',              fn() => view('client.dashboard'));
-    Route::get('/ai-chat',       fn() => view('client.ai-chat'));
     Route::get('/cases',         fn() => view('client.cases'));
     Route::get('/cases/new',     fn() => view('client.case-new'));
     Route::get('/cases/{id}',    fn() => view('client.case-detail'));
@@ -30,7 +34,7 @@ Route::prefix('client')->group(function () {
 Route::get('/payment/success', fn() => view('payment.success'));
 Route::get('/payment/failed',  fn() => view('payment.failed'));
 
-// ─── Paralegal Workspace ──────────────────────────────
+// ─── Paralegal Workspace (Blade) ──────────────────────
 Route::prefix('paralegal')->group(function () {
     Route::get('/',             fn() => view('paralegal.dashboard'));
     Route::get('/kanban',       fn() => view('paralegal.dashboard'));
@@ -39,17 +43,13 @@ Route::prefix('paralegal')->group(function () {
     Route::get('/cases/{id}',   fn() => view('paralegal.case-detail'));
 });
 
-// ─── Lawyer Dashboard ─────────────────────────────────
+// ─── Lawyer Dashboard (Blade) ─────────────────────────
 Route::prefix('lawyer')->group(function () {
-    Route::get('/',        fn() => view('lawyer.dashboard'));
-    Route::get('/cases',   fn() => view('lawyer.cases'));
+    Route::get('/',           fn() => view('lawyer.dashboard'));
+    Route::get('/cases',      fn() => view('lawyer.cases'));
     Route::get('/cases/{id}', fn() => view('paralegal.case-detail'));
-    Route::get('/revenue', fn() => view('lawyer.revenue'));
-    Route::get('/wallet',  fn() => view('lawyer.wallet'));
-});
-
-Route::get('/swagger.yaml', function () {
-    return response()->file(public_path('swagger.yaml'));
+    Route::get('/revenue',    fn() => view('lawyer.revenue'));
+    Route::get('/wallet',     fn() => view('lawyer.wallet'));
 });
 
 // ── Admin: Download Expert Documents ────────────────────────
@@ -78,7 +78,8 @@ Route::get('/admin/expert/{profile}/document/{type}', function (ExpertProfile $p
         abort(404, 'Dokumen tidak ditemukan.');
     }
 
-    // Jika menggunakan S3, kita bisa me-redirect ke temporary URL atau langsung mengunduhnya
-    // Namun download() bisa berfungsi juga jika stream file bisa diakses
     return Storage::disk()->download($path);
 })->middleware(['web', 'auth'])->name('expert.document.download');
+
+// ─── SPA Catch-All Fallback ───────────────────────────
+Route::get('/{any}', fn() => view('app'))->where('any', '^(?!api|admin|swagger|api-docs).*$');
