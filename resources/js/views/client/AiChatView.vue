@@ -70,17 +70,18 @@ const handleSend = async (customText = null) => {
             question: query, // support both schemas
         });
 
-        const reply =
-            response.data.reply ||
-            response.data.answer ||
-            response.data.data?.reply ||
-            response.data.message ||
-            'Maaf, tidak dapat memproses jawaban saat ini.';
+        const reply = [
+            response.data.data?.answer,
+            response.data.data?.reply,
+            response.data.answer,
+            response.data.reply,
+        ].find((value) => typeof value === 'string' && value.trim());
 
         messages.value.push({
             role: 'assistant',
-            content: reply,
+            content: reply || 'Maaf, jawaban AI belum tersedia. Silakan coba kembali.',
             time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            isError: !reply,
         });
     } catch (err) {
         messages.value.push({
