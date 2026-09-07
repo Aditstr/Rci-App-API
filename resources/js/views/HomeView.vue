@@ -288,20 +288,5 @@ const startAiChat = (customText = null) => {
             </div>
         </section>
 
-        <!-- Footer -->
-        <footer class="bg-slate-950 text-white py-12 px-6 sm:px-8 lg:px-12 border-t border-slate-900">
-            <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
-                <div class="flex items-center gap-2.5">
-                    <div class="w-7 h-7 rounded-lg bg-[#fc5000] text-white flex items-center justify-center font-bold text-sm">
-                        R
-                    </div>
-                    <span class="font-bold text-base tracking-tight text-white">RCI — Roys Counsel Indonesia</span>
-                </div>
-                <p class="text-xs text-slate-400 text-center sm:text-right">
-                    © 2026 Roys Counsel Indonesia. All rights reserved.
-                </p>
-            </div>
-        </footer>
-
     </div>
 </template>

@@ -59,6 +59,9 @@
         </div>
 
         @yield('content')
+        <footer style="margin-top:32px; padding:24px 0; border-top:1px solid rgba(7,6,7,0.12); text-align:center;">
+            <a href="{{ route('feedback') }}" style="color:var(--color-obsidian); font-size:14px; text-underline-offset:4px;">Kritik &amp; Saran</a>
+        </footer>
     </main>
 </div>
 

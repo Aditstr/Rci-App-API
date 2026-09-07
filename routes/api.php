@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\CaseCompletionController;
 use App\Http\Controllers\Api\ComplianceFlagController;
 use App\Http\Controllers\Api\ReviewController;
+use App\Http\Controllers\Api\FeedbackController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -32,6 +33,10 @@ use Illuminate\Support\Facades\Route;
 // API Version 1
 // ──────────────────────────────────────────────
 Route::prefix('v1')->group(function () {
+
+    Route::post('/feedback', [FeedbackController::class, 'store'])
+        ->middleware('throttle:feedback')
+        ->name('api.v1.feedback.store');
 
     // ──────────────────────────────────────────────
     // AI Chat (Freemium — accessible with or without auth)

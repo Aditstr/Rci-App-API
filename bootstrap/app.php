@@ -34,6 +34,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->render(function (\Throwable $e, \Illuminate\Http\Request $request) {
             if ($request->is('api/*')) {
                 // Ensure all API errors return JSON
+                if ($e instanceof \Illuminate\Http\Exceptions\HttpResponseException) {
+                    return $e->getResponse();
+                }
+
                 if ($e instanceof \Illuminate\Validation\ValidationException) {
                     return response()->json([
                         'success' => false,

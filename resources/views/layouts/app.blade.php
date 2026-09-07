@@ -78,7 +78,7 @@
         <hr style="border:none; border-top:1.5px dotted rgba(255,255,255,0.15); margin-bottom:24px;">
         <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
             <p style="color:rgba(255,255,255,0.4); font-size:12px;">© {{ date('Y') }} Roys Counsel Indonesia. Hak cipta dilindungi.</p>
-            <p style="color:rgba(255,255,255,0.4); font-size:12px;">Dibuat dengan Caldera Design System</p>
+            <a href="{{ route('feedback') }}" style="color:var(--color-chalk); font-size:14px; text-underline-offset:4px;">Kritik &amp; Saran</a>
         </div>
     </div>
 </footer>

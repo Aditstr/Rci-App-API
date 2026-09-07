@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 import AppNavbar from '@/components/AppNavbar.vue';
+import AppFooter from '@/components/AppFooter.vue';
 
 const route = useRoute();
 
@@ -21,6 +22,7 @@ const showNavbar = computed(() => {
                 </transition>
             </router-view>
         </main>
+        <AppFooter />
     </div>
 </template>
 

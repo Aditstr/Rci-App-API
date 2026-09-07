@@ -25,6 +25,11 @@ const routes = [
     },
     // ── Client Routes ──
     {
+        path: '/kritik-saran',
+        name: 'feedback',
+        component: () => import('@/views/FeedbackView.vue'),
+    },
+    {
         path: '/client',
         name: 'client.dashboard',
         component: DashboardView,

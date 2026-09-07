@@ -25,6 +25,14 @@ class AppServiceProvider extends ServiceProvider
     {
         // Prevent lazy loading in non-production to catch N+1 issues early
         Model::preventLazyLoading(! app()->isProduction());
+        RateLimiter::for('feedback', function (Request $request) {
+            return Limit::perHour(5)->by($request->ip())->response(function () {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Batas pengiriman masukan tercapai. Silakan coba kembali dalam satu jam.',
+                ], 429);
+            });
+        });
         // ── Rate Limiters ────────────────────────────────────────
 
         // General API: 60 requests per minute per user/IP

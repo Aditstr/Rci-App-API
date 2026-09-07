@@ -15,6 +15,7 @@ Route::get('/auth/google/callback', fn() => view('auth.google-callback'));
 
 // ─── Vue 3 SPA Primary Routes ─────────────────────────
 Route::get('/', fn() => view('app'));
+Route::get('/kritik-saran', fn() => view('app'))->name('feedback');
 Route::get('/login', fn() => view('app'));
 Route::get('/register', fn() => view('app'));
 Route::get('/client', fn() => view('app'));
