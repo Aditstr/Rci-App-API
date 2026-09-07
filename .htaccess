@@ -1,0 +1,11 @@
+Options -Indexes
+RewriteEngine On
+
+# Protect hidden application files and directories.
+RewriteRule (^|/)\.(?!well-known(?:/|$)) - [F,L]
+
+# Let Laravel's public/.htaccess handle requests after the internal rewrite.
+RewriteRule ^public(?:/|$) - [L]
+
+# Hostinger serves this repository from public_html; Laravel starts in public/.
+RewriteRule ^(.*)$ public/$1 [L]
