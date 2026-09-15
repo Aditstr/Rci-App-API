@@ -41,6 +41,19 @@ HTML;
             ['value' => $lawyerSop]
         );
 
+        // Bank destination for manual transfer top-up
+        $bankDestination = json_encode([
+            'bank_name' => 'BCA',
+            'account_number' => '1234567890',
+            'account_name' => 'RCI - Roys Counsel Indonesia',
+            'note' => 'Isi di /admin > Pengaturan > bank_destination. Ganti dengan rekening bisnis RCI sebelum terima user real.',
+        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+
+        Setting::updateOrCreate(
+            ['key' => 'bank_destination'],
+            ['value' => $bankDestination]
+        );
+
         $this->command->info("✅ SOP Settings seeded successfully!");
     }
 }

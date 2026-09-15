@@ -23,6 +23,12 @@ class Payment extends Model
         'xendit_invoice_id',
         'xendit_invoice_url',
         'xendit_expiry_date',
+        'proof_path',
+        'bank_name',
+        'sender_name',
+        'verified_by',
+        'verified_at',
+        'rejection_reason',
         'paid_at',
         'metadata',
     ];
@@ -32,6 +38,7 @@ class Payment extends Model
         return [
             'amount' => 'decimal:2',
             'paid_at' => 'datetime',
+            'verified_at' => 'datetime',
             'xendit_expiry_date' => 'datetime',
             'metadata' => 'array',
         ];
@@ -54,6 +61,11 @@ class Payment extends Model
     public function subscription(): BelongsTo
     {
         return $this->belongsTo(Subscription::class);
+    }
+
+    public function verifier(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'verified_by');
     }
 
     // ──────────────────────────────────────────────

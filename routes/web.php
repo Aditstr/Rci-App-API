@@ -56,6 +56,20 @@ Route::prefix('lawyer')->group(function () {
     Route::get('/wallet',     fn() => view('lawyer.wallet'));
 });
 
+// ── Manual Proof Download (admin or owner) ──────────────────
+Route::get('/manual-proof/{payment}/download', function (\App\Models\Payment $payment) {
+    $user = auth()->user();
+    $isOwner = $user && (int) $payment->user_id === (int) $user->id;
+    if (! $user || (! $user->isAdmin() && ! $isOwner)) {
+        abort(403);
+    }
+    $path = $payment->proof_path;
+    if (! $path) abort(404, 'Bukti tidak ditemukan');
+    $disk = Storage::disk()->exists($path) ? Storage::disk() : Storage::disk('s3');
+    if (! $disk->exists($path)) abort(404, 'Bukti tidak ditemukan');
+    return $disk->download($path);
+})->middleware(['web', 'auth'])->name('manual-proof.download');
+
 // ── Admin: Download Expert Documents ────────────────────────
 Route::get('/admin/expert/{profile}/document/{type}', function (ExpertProfile $profile, string $type) {
     // Security: Only admins can download expert documents (KTP, ijazah, etc.)

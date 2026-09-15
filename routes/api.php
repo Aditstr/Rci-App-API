@@ -123,6 +123,10 @@ Route::prefix('v1')->group(function () {
         Route::get('/wallet',              [WalletController::class, 'show'])->name('api.v1.rci.wallet.show');
         Route::get('/wallet/transactions', [WalletController::class, 'transactions'])->name('api.v1.rci.wallet.transactions');
 
+        // Manual Transfer Top-up — all verified users (client/paralegal/lawyer)
+        Route::post('/topup/manual', [\App\Http\Controllers\Api\RciManualTopupController::class, 'store'])->name('api.v1.rci.topup.manual.store');
+        Route::get('/topup/manual',  [\App\Http\Controllers\Api\RciManualTopupController::class, 'index'])->name('api.v1.rci.topup.manual.index');
+
         // Wallet Actions & Escrow — client only
         Route::middleware('role:client')->group(function () {
             Route::post('/topup',        [RciApiController::class, 'topup'])->name('api.v1.rci.topup');
