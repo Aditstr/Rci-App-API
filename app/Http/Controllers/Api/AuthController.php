@@ -160,6 +160,8 @@ class AuthController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Your email address is not verified. Please check your inbox for the verification link.',
+                'need_verification' => true,
+                'email' => $user->email,
             ], 403);
         }
 

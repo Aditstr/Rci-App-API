@@ -17,9 +17,11 @@ const password = ref('');
 const password_confirmation = ref('');
 const role = ref('client');
 const errorMessage = ref('');
+const fieldErrors = ref({});
 
 const handleRegister = async () => {
     errorMessage.value = '';
+    fieldErrors.value = {};
     if (password.value !== password_confirmation.value) {
         errorMessage.value = 'Konfirmasi kata sandi tidak cocok.';
         return;
@@ -34,15 +36,10 @@ const handleRegister = async () => {
     });
 
     if (result.success) {
-        if (role.value === 'paralegal') {
-            router.push('/paralegal');
-        } else if (role.value === 'lawyer') {
-            router.push('/lawyer');
-        } else {
-            router.push('/client');
-        }
+        router.push({ name: 'check-email', query: { email: email.value } });
     } else {
         errorMessage.value = result.message;
+        fieldErrors.value = result.errors || {};
     }
 };
 </script>
@@ -72,7 +69,12 @@ const handleRegister = async () => {
                 <Alert v-if="errorMessage" variant="destructive" class="mb-6">
                     <AlertCircle class="w-4 h-4" />
                     <AlertTitle>Registrasi Gagal</AlertTitle>
-                    <AlertDescription>{{ errorMessage }}</AlertDescription>
+                    <AlertDescription>
+                        {{ errorMessage }}
+                        <ul v-if="Object.keys(fieldErrors).length" class="mt-2 list-disc pl-5 text-left">
+                            <li v-for="(msgs, field) in fieldErrors" :key="field">{{ Array.isArray(msgs) ? msgs[0] : msgs }}</li>
+                        </ul>
+                    </AlertDescription>
                 </Alert>
 
                 <form @submit.prevent="handleRegister" class="space-y-4">

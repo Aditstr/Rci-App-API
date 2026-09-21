@@ -23,6 +23,11 @@ const routes = [
         component: RegisterView,
         meta: { guestOnly: true },
     },
+    {
+        path: '/check-email',
+        name: 'check-email',
+        component: () => import('@/views/auth/CheckEmailView.vue'),
+    },
     // ── Client Routes ──
     {
         path: '/kritik-saran',
@@ -93,6 +98,18 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
     const token = localStorage.getItem('rci_token');
+    let user = null;
+    try {
+        user = JSON.parse(localStorage.getItem('rci_user') || 'null');
+    } catch {
+        user = null;
+    }
+    // ponytail: 1 guard terpusat, bukan per-view — unverified jangan masuk dashboard
+    const needsVerified = ['client.dashboard', 'paralegal.dashboard', 'lawyer.dashboard'].includes(to.name);
+    if (needsVerified && token && user && user.is_verified === false) {
+        next({ name: 'check-email', query: { email: user.email } });
+        return;
+    }
 
     if (to.meta.requiresAuth && !token) {
         next({ name: 'login', query: { redirect: to.fullPath } });

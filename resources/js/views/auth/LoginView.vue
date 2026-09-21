@@ -1,6 +1,6 @@
 <script setup>
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, computed, onMounted } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,12 +9,26 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-vue-next';
 
 const router = useRouter();
+const route = useRoute();
 const auth = useAuthStore();
 
 const email = ref('');
 const password = ref('');
 const showPassword = ref(false);
 const errorMessage = ref('');
+const successMessage = ref('');
+
+onMounted(() => {
+    if (route.query.verified === '1') {
+        successMessage.value = 'Email terverifikasi. Silakan masuk.';
+    } else if (route.query.verified === 'already') {
+        successMessage.value = 'Email sudah terverifikasi. Silakan masuk.';
+    } else if (route.query.verify === 'invalid') {
+        errorMessage.value = 'Link verifikasi tidak valid / kedaluwarsa. Minta kirim ulang dari halaman daftar.';
+    }
+});
+
+const dashboardFor = (role) => (role === 'paralegal' ? '/paralegal' : role === 'lawyer' ? '/lawyer' : '/client');
 
 const handleLogin = async () => {
     errorMessage.value = '';
@@ -24,14 +38,14 @@ const handleLogin = async () => {
     });
 
     if (result.success) {
-        const role = result.role;
-        if (role === 'paralegal') {
-            router.push('/paralegal');
-        } else if (role === 'lawyer') {
-            router.push('/lawyer');
-        } else {
-            router.push('/client');
+        const stored = JSON.parse(localStorage.getItem('rci_user') || 'null');
+        if (stored && stored.is_verified === false) {
+            router.push({ name: 'check-email', query: { email: stored.email } });
+            return;
         }
+        router.push(dashboardFor(result.role));
+    } else if (result.need_verification) {
+        router.push({ name: 'check-email', query: { email: result.email || email.value } });
     } else {
         errorMessage.value = result.message;
     }
@@ -61,6 +75,11 @@ const handleLogin = async () => {
             </CardHeader>
 
             <CardContent>
+                <!-- Success Alert -->
+                <Alert v-if="successMessage" class="mb-6 border-green-200 bg-green-50">
+                    <AlertTitle>Berhasil</AlertTitle>
+                    <AlertDescription>{{ successMessage }}</AlertDescription>
+                </Alert>
                 <!-- Error Alert -->
                 <Alert v-if="errorMessage" variant="destructive" class="mb-6">
                     <AlertCircle class="w-4 h-4" />

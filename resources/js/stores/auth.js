@@ -37,12 +37,13 @@ export const useAuthStore = defineStore('auth', {
 
                 return { success: true, user, role: user?.role };
             } catch (err) {
+                const data = err.response?.data || {};
                 const message =
-                    err.response?.data?.message ||
-                    err.response?.data?.errors?.email?.[0] ||
+                    data.message ||
+                    data.errors?.email?.[0] ||
                     'Gagal masuk. Periksa kembali email dan kata sandi.';
                 this.error = message;
-                return { success: false, message };
+                return { success: false, message, need_verification: data.need_verification === true, email: data.email };
             } finally {
                 this.loading = false;
             }
@@ -73,6 +74,18 @@ export const useAuthStore = defineStore('auth', {
                     'Registrasi gagal. Silakan periksa data input.';
                 this.error = message;
                 return { success: false, message, errors: err.response?.data?.errors };
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        async resend(email) {
+            this.loading = true;
+            try {
+                await api.post('/email/resend', { email });
+                return { success: true };
+            } catch (err) {
+                return { success: false, message: err.response?.data?.message || 'Gagal mengirim ulang.' };
             } finally {
                 this.loading = false;
             }

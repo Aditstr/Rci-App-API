@@ -5,41 +5,43 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class VerificationController extends Controller
 {
     /**
-     * Mark the authenticated user's email address as verified.
+     * Mark the user's email address as verified.
      *
-     * GET /api/email/verify/{id}/{hash}
+     * Link dibuka dari inbox (browser) sehingga selalu redirect ke frontend,
+     * bukan JSON. Status dibawa via query param:
+     * ?verified=1 | ?verified=already | ?verify=invalid
+     *
+     * GET /api/v1/email/verify/{id}/{hash}
      */
-    public function verify(Request $request, $id, $hash): JsonResponse
+    public function verify(Request $request, $id, $hash): RedirectResponse|JsonResponse
     {
-        $user = User::findOrFail($id);
+        $frontend = rtrim((string) config('app.frontend_url', config('app.url')), '/');
+        $user = User::find($id);
 
-        if (! hash_equals((string) $hash, sha1($user->getEmailForVerification()))) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid verification link.',
-            ], 403);
+        if (! $user || ! hash_equals((string) $hash, sha1($user->getEmailForVerification()))) {
+            // ponytail: API client yang minta JSON tetap dapat JSON
+            if ($request->expectsJson() && ! $request->isMethod('get')) {
+                return response()->json(['success' => false, 'message' => 'Invalid verification link.'], 403);
+            }
+
+            return redirect("{$frontend}/login?verify=invalid");
         }
 
         if ($user->hasVerifiedEmail()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Email already verified.',
-            ], 200);
+            return redirect("{$frontend}/login?verified=already");
         }
 
         if ($user->markEmailAsVerified()) {
             User::where('id', $user->id)->update(['is_verified' => \Illuminate\Support\Facades\DB::raw('true')]);
         }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Email has been successfully verified. You can now log in.',
-        ], 200);
+        return redirect("{$frontend}/login?verified=1");
     }
 
     /**
