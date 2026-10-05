@@ -91,6 +91,11 @@ export const useAuthStore = defineStore('auth', {
             }
         },
 
+        setToken(token) {
+            this.token = token;
+            localStorage.setItem('rci_token', token);
+        },
+
         async fetchUser() {
             if (!this.token) return;
             try {

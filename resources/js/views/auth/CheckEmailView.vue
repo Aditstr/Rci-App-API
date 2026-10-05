@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { Button } from '@/components/ui/button';
@@ -29,6 +29,39 @@ const handleResend = async () => {
         error.value = result.message;
     }
 };
+
+// ── Auto-redirect saat email diverifikasi (mis. link dibuka di tab lain) ──
+const dashboardFor = (role) => (role === 'paralegal' ? '/paralegal' : role === 'lawyer' ? '/lawyer' : '/client');
+let pollTimer = null;
+
+const checkVerified = async () => {
+    if (!auth.token) return;
+    await auth.fetchUser();
+    if (auth.user?.is_verified === true) {
+        clearInterval(pollTimer);
+        router.replace(dashboardFor(auth.user.role));
+    }
+};
+
+// Tab lain (halaman /auth/verified) menyimpan token baru → langsung cek
+const onStorage = (e) => {
+    if (e.key === 'rci_token' && e.newValue) {
+        auth.token = e.newValue;
+        checkVerified();
+    }
+};
+
+onMounted(() => {
+    if (auth.token) {
+        pollTimer = setInterval(checkVerified, 5000);
+    }
+    window.addEventListener('storage', onStorage);
+});
+
+onUnmounted(() => {
+    clearInterval(pollTimer);
+    window.removeEventListener('storage', onStorage);
+});
 </script>
 
 <template>

@@ -34,14 +34,25 @@ class VerificationController extends Controller
         }
 
         if ($user->hasVerifiedEmail()) {
-            return redirect("{$frontend}/login?verified=already");
+            // Link sudah pernah dipakai — tidak menerbitkan token lagi (link sekali pakai).
+            // Frontend akan tetap masuk dashboard jika browser ini sudah punya sesi.
+            return redirect("{$frontend}/auth/verified#status=already");
         }
 
         if ($user->markEmailAsVerified()) {
             User::where('id', $user->id)->update(['is_verified' => \Illuminate\Support\Facades\DB::raw('true')]);
+            event(new \Illuminate\Auth\Events\Verified($user));
         }
 
-        return redirect("{$frontend}/login?verified=1");
+        // Akun dinonaktifkan admin → jangan auto-login
+        if ($user->is_active === false) {
+            return redirect("{$frontend}/login?verified=1");
+        }
+
+        // Auto-login: token dikirim via fragment (#) agar tidak ikut terkirim ke server / tercatat di log
+        $token = $user->createToken('auth-token')->plainTextToken;
+
+        return redirect("{$frontend}/auth/verified#token=" . urlencode($token));
     }
 
     /**

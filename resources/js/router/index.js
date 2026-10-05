@@ -28,6 +28,11 @@ const routes = [
         name: 'check-email',
         component: () => import('@/views/auth/CheckEmailView.vue'),
     },
+    {
+        path: '/auth/verified',
+        name: 'auth.verified',
+        component: () => import('@/views/auth/EmailVerifiedView.vue'),
+    },
     // ── Client Routes ──
     {
         path: '/kritik-saran',
