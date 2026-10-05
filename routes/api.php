@@ -66,10 +66,14 @@ Route::prefix('v1')->group(function () {
             ->name('api.v1.auth.reset_password');
 
         // Required by Laravel's built-in ResetPassword Notification to generate the email link
-        Route::get('/reset-password/{token}', function (string $token) {
+        Route::get('/reset-password/{token}', function (\Illuminate\Http\Request $request, string $token) {
             // Security: Do not expose token in JSON response — redirect to frontend
-            $frontendUrl = config('app.frontend_url', config('app.url'));
-            return redirect("{$frontendUrl}/reset-password?token={$token}");
+            $frontendUrl = rtrim((string) config('app.frontend_url', config('app.url')), '/');
+            $query = http_build_query([
+                'token' => $token,
+                'email' => (string) $request->query('email', ''),
+            ]);
+            return redirect("{$frontendUrl}/reset-password?{$query}");
         })->name('password.reset');
 
         // Google OAuth

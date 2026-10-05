@@ -51,12 +51,13 @@ class VerificationController extends Controller
      */
     public function resend(Request $request): JsonResponse
     {
+        $request->merge(['email' => strtolower(trim((string) $request->input('email')))]);
         $request->validate([
             'email' => 'required|email',
         ]);
 
         // Security: Always return success to prevent user enumeration
-        $user = User::where('email', $request->email)->first();
+        $user = User::whereRaw('LOWER(email) = ?', [$request->email])->first();
 
         if ($user && ! $user->hasVerifiedEmail()) {
             $user->sendEmailVerificationNotification();

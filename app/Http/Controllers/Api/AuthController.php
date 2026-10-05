@@ -30,47 +30,37 @@ class AuthController extends Controller
      */
     public function register(RegisterRequest $request): JsonResponse
     {
+        $isExpert = in_array($request->role, ['lawyer', 'paralegal']);
+
         try {
-            $user = User::create([
-                'name'     => $request->name,
-                'email'    => $request->email,
-                'password' => Hash::make($request->password),
-                'role'     => $request->role,
-            ]);
+            // All DB writes are atomic: if any step fails, no orphan user is left
+            // behind (which would otherwise block re-registration via `unique`).
+            $user = \Illuminate\Support\Facades\DB::transaction(function () use ($request, $isExpert) {
+                $user = User::create([
+                    'name'     => $request->name,
+                    'email'    => $request->email,
+                    'password' => $request->password, // hashed by the model's 'hashed' cast
+                    'role'     => $request->role,
+                ]);
 
-            // Auto-create wallet for new user (AUTH-08)
-            \App\Models\Wallet::firstOrCreate(
-                ['user_id' => $user->id],
-                ['balance' => 0]
-            );
+                // Auto-create wallet for new user (AUTH-08)
+                \App\Models\Wallet::firstOrCreate(
+                    ['user_id' => $user->id],
+                    ['balance' => 0]
+                );
 
-            // ── Expert document upload (lawyer / paralegal) ─────
-            if (in_array($request->role, ['lawyer', 'paralegal'])) {
-                $docPaths = $this->uploadExpertDocuments($request, $user);
+                // Expert documents are uploaded post-login via resubmitDocuments()
+                // (validated there), so only the pending profile is created here.
+                if ($isExpert) {
+                    ExpertProfile::create([
+                        'user_id'             => $user->id,
+                        'license_number'      => 'PENDING-' . \Illuminate\Support\Str::uuid()->toString(), // to be filled after verification
+                        'verification_status' => 'pending',
+                    ]);
+                }
 
-                ExpertProfile::create(array_merge([
-                    'user_id'             => $user->id,
-                    'license_number'      => 'PENDING-' . \Illuminate\Support\Str::uuid()->toString(), // to be filled after verification
-                    'verification_status' => 'pending',
-                ], $docPaths));
-            }
-
-            event(new Registered($user));
-
-            // Generate token upon registration (AUTH-01)
-            $token = $user->createToken('auth-token')->plainTextToken;
-
-            $message = 'Registration successful. Please check your email to verify your account.';
-            if (in_array($request->role, ['lawyer', 'paralegal'])) {
-                $message = 'Registrasi berhasil. Silakan verifikasi email Anda. Dokumen Anda akan ditinjau oleh admin sebelum Anda dapat menangani kasus.';
-            }
-
-            return response()->json([
-                'success' => true,
-                'message' => $message,
-                'token'   => $token,
-                'user'    => new UserResource($user->load('expertProfile')),
-            ], 201);
+                return $user;
+            });
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('Registration failed: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
@@ -83,47 +73,31 @@ class AuthController extends Controller
                 'user'    => null,
             ], 500);
         }
-    }
 
-    /**
-     * Upload expert documents and return an array of storage paths.
-     */
-    private function uploadExpertDocuments(RegisterRequest $request, User $user): array
-    {
-        $basePath = "expert-documents/{$user->id}";
-        $paths = [];
-
-        // KTP — wajib untuk paralegal & lawyer
-        if ($request->hasFile('ktp')) {
-            $paths['ktp_path'] = $request->file('ktp')
-                ->store("{$basePath}/ktp");
+        // Sending the verification email must not turn a successful registration
+        // into a failure (e.g. SMTP down). The user can request it again via /email/resend.
+        try {
+            event(new Registered($user));
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Verification email failed to send: ' . $e->getMessage(), [
+                'user_id' => $user->id,
+            ]);
         }
 
-        // Ijazah — wajib untuk paralegal & lawyer
-        if ($request->hasFile('ijazah')) {
-            $paths['ijazah_path'] = $request->file('ijazah')
-                ->store("{$basePath}/ijazah");
+        // Generate token upon registration (AUTH-01)
+        $token = $user->createToken('auth-token')->plainTextToken;
+
+        $message = 'Registrasi berhasil. Silakan cek email Anda untuk verifikasi akun.';
+        if ($isExpert) {
+            $message = 'Registrasi berhasil. Silakan verifikasi email Anda. Dokumen Anda akan ditinjau oleh admin sebelum Anda dapat menangani kasus.';
         }
 
-        // License Card (PERADI) — wajib untuk lawyer
-        if ($request->hasFile('license_card')) {
-            $paths['license_card_path'] = $request->file('license_card')
-                ->store("{$basePath}/license");
-        }
-
-        // Selfie — wajib untuk lawyer
-        if ($request->hasFile('selfie')) {
-            $paths['selfie_path'] = $request->file('selfie')
-                ->store("{$basePath}/selfie");
-        }
-
-        // CV — opsional untuk lawyer
-        if ($request->hasFile('cv')) {
-            $paths['cv_path'] = $request->file('cv')
-                ->store("{$basePath}/cv");
-        }
-
-        return $paths;
+        return response()->json([
+            'success' => true,
+            'message' => $message,
+            'token'   => $token,
+            'user'    => new UserResource($user->load('expertProfile')),
+        ], 201);
     }
 
     // ─── Login ──────────────────────────────────────────────────
@@ -135,7 +109,8 @@ class AuthController extends Controller
      */
     public function login(LoginRequest $request): JsonResponse
     {
-        $user = User::where('email', $request->email)->first();
+        // Case-insensitive lookup (PostgreSQL compares strings case-sensitively)
+        $user = User::whereRaw('LOWER(email) = ?', [$request->email])->first();
 
         if (! $user || ! Hash::check($request->password, $user->password)) {
             throw ValidationException::withMessages([
@@ -463,6 +438,7 @@ class AuthController extends Controller
      */
     public function forgotPassword(Request $request): JsonResponse
     {
+        $request->merge(['email' => strtolower(trim((string) $request->input('email')))]);
         $request->validate(['email' => 'required|email']);
 
         \Illuminate\Support\Facades\Password::broker()->sendResetLink(
@@ -485,6 +461,7 @@ class AuthController extends Controller
      */
     public function resetPassword(Request $request): JsonResponse
     {
+        $request->merge(['email' => strtolower(trim((string) $request->input('email')))]);
         $request->validate([
             'token'    => 'required',
             'email'    => 'required|email',
