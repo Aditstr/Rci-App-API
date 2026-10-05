@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
+import { useAuthStore } from '@/stores/auth';
 import HomeView from '@/views/HomeView.vue';
 import LoginView from '@/views/auth/LoginView.vue';
 import RegisterView from '@/views/auth/RegisterView.vue';
@@ -101,7 +102,8 @@ const router = createRouter({
     },
 });
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
+    const auth = useAuthStore();
     const token = localStorage.getItem('rci_token');
     let user = null;
     try {
@@ -112,8 +114,17 @@ router.beforeEach((to, from, next) => {
     // ponytail: 1 guard terpusat, bukan per-view — unverified jangan masuk dashboard
     const needsVerified = ['client.dashboard', 'paralegal.dashboard', 'lawyer.dashboard'].includes(to.name);
     if (needsVerified && token && user && user.is_verified === false) {
-        next({ name: 'check-email', query: { email: user.email } });
-        return;
+        // Data di localStorage bisa basi (mis. email diverifikasi di tab/browser/perangkat lain).
+        // Cek ulang ke server sebelum memutuskan.
+        await auth.fetchUser();
+        if (!localStorage.getItem('rci_token')) {
+            next({ name: 'login', query: { redirect: to.fullPath } });
+            return;
+        }
+        if (auth.user?.is_verified === false) {
+            next({ name: 'check-email', query: { email: auth.user.email } });
+            return;
+        }
     }
 
     if (to.meta.requiresAuth && !token) {

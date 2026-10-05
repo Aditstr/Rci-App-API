@@ -53,6 +53,7 @@ const onStorage = (e) => {
 
 onMounted(() => {
     if (auth.token) {
+        checkVerified();
         pollTimer = setInterval(checkVerified, 5000);
     }
     window.addEventListener('storage', onStorage);
