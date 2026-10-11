@@ -1,22 +1,24 @@
 <script setup>
 import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Loader2, CheckCircle2 } from 'lucide-vue-next';
 
 const router = useRouter();
+const route = useRoute();
 const auth = useAuthStore();
 const done = ref(false);
 
 const dashboardFor = (role) => (role === 'paralegal' ? '/paralegal' : role === 'lawyer' ? '/lawyer' : '/client');
 
 onMounted(async () => {
-    const params = new URLSearchParams(window.location.hash.slice(1));
-    const token = params.get('token');
-    const status = params.get('status');
+    // Baca dari query parameter (primary) atau hash fragment (fallback/backward compat)
+    const hashParams = new URLSearchParams(window.location.hash.slice(1));
+    const token = route.query.token || hashParams.get('token');
+    const status = route.query.status || hashParams.get('status');
 
-    // Hapus token dari address bar / history
+    // Hapus token dari address bar / history agar tidak terekspos
     window.history.replaceState(window.history.state, '', window.location.pathname);
 
     if (token) {

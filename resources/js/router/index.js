@@ -111,7 +111,26 @@ router.beforeEach(async (to, from, next) => {
     } catch {
         user = null;
     }
-    // ponytail: 1 guard terpusat, bukan per-view — unverified jangan masuk dashboard
+
+    const dashboardFor = (role) => (role === 'paralegal' ? 'paralegal.dashboard' : role === 'lawyer' ? 'lawyer.dashboard' : 'client.dashboard');
+
+    // ── Redirect verified users AWAY from check-email page ──
+    if (to.name === 'check-email' && token && user) {
+        // Selalu cek ulang ke server, karena localStorage bisa basi
+        await auth.fetchUser();
+        if (!localStorage.getItem('rci_token')) {
+            next({ name: 'login' });
+            return;
+        }
+        // Re-read user setelah fetchUser memperbarui localStorage
+        const freshUser = auth.user;
+        if (freshUser?.is_verified === true) {
+            next({ name: dashboardFor(freshUser.role) });
+            return;
+        }
+    }
+
+    // ── Unverified jangan masuk dashboard ──
     const needsVerified = ['client.dashboard', 'paralegal.dashboard', 'lawyer.dashboard'].includes(to.name);
     if (needsVerified && token && user && user.is_verified === false) {
         // Data di localStorage bisa basi (mis. email diverifikasi di tab/browser/perangkat lain).
@@ -121,8 +140,10 @@ router.beforeEach(async (to, from, next) => {
             next({ name: 'login', query: { redirect: to.fullPath } });
             return;
         }
-        if (auth.user?.is_verified === false) {
-            next({ name: 'check-email', query: { email: auth.user.email } });
+        // Re-read dari store (fetchUser sudah update auth.user & localStorage)
+        const freshUser = auth.user;
+        if (freshUser?.is_verified === false) {
+            next({ name: 'check-email', query: { email: freshUser.email } });
             return;
         }
     }

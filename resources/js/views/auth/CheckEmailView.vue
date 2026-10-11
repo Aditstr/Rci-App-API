@@ -51,9 +51,11 @@ const onStorage = (e) => {
     }
 };
 
-onMounted(() => {
+onMounted(async () => {
     if (auth.token) {
-        checkVerified();
+        // Cek langsung saat mount — jangan tunggu interval pertama
+        await checkVerified();
+        // Jika belum redirect (masih unverified), mulai polling
         pollTimer = setInterval(checkVerified, 5000);
     }
     window.addEventListener('storage', onStorage);

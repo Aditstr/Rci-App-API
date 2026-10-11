@@ -36,7 +36,7 @@ class VerificationController extends Controller
         if ($user->hasVerifiedEmail()) {
             // Link sudah pernah dipakai — tidak menerbitkan token lagi (link sekali pakai).
             // Frontend akan tetap masuk dashboard jika browser ini sudah punya sesi.
-            return redirect("{$frontend}/auth/verified#status=already");
+            return redirect("{$frontend}/auth/verified?status=already");
         }
 
         if ($user->markEmailAsVerified()) {
@@ -49,10 +49,11 @@ class VerificationController extends Controller
             return redirect("{$frontend}/login?verified=1");
         }
 
-        // Auto-login: token dikirim via fragment (#) agar tidak ikut terkirim ke server / tercatat di log
+        // Auto-login: token dikirim via query parameter agar reliable di semua redirect
+        // Frontend segera menghapus token dari URL bar setelah dibaca
         $token = $user->createToken('auth-token')->plainTextToken;
 
-        return redirect("{$frontend}/auth/verified#token=" . urlencode($token));
+        return redirect("{$frontend}/auth/verified?token=" . urlencode($token));
     }
 
     /**
