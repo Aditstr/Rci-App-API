@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,12 @@ import { Menu, X, LogOut, LayoutDashboard, MessageSquare, Sparkles } from 'lucid
 const router = useRouter();
 const auth = useAuthStore();
 const mobileOpen = ref(false);
+
+const dashboardPath = computed(() => {
+    if (auth.role === 'paralegal') return '/paralegal';
+    if (auth.role === 'lawyer') return '/lawyer';
+    return '/client';
+});
 
 const handleLogout = async () => {
     await auth.logout();
@@ -49,7 +55,7 @@ const handleLogout = async () => {
             <!-- Actions -->
             <div class="hidden md:flex items-center gap-3">
                 <template v-if="auth.isAuthenticated">
-                    <router-link to="/client">
+                    <router-link :to="dashboardPath">
                         <Button variant="outline" size="sm" class="gap-2 rounded-full border-slate-200 hover:bg-slate-50 text-slate-700">
                             <LayoutDashboard class="w-4 h-4" />
                             Dashboard
@@ -125,7 +131,7 @@ const handleLogout = async () => {
             <hr class="border-slate-100 my-1" />
             <template v-if="auth.isAuthenticated">
                 <router-link
-                    to="/client"
+                    :to="dashboardPath"
                     class="py-2 text-sm font-medium flex items-center gap-2 text-slate-800"
                     @click="mobileOpen = false"
                 >

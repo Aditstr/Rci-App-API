@@ -38,10 +38,11 @@ Route::prefix('client')->group(function () {
 Route::get('/payment/success', fn() => view('payment.success'));
 Route::get('/payment/failed',  fn() => view('payment.failed'));
 
-// ─── Paralegal Workspace (Blade) ──────────────────────
+// ─── Paralegal Workspace ─────────────────────────────
 Route::prefix('paralegal')->group(function () {
-    Route::get('/',             fn() => view('paralegal.dashboard'));
-    Route::get('/kanban',       fn() => view('paralegal.dashboard'));
+    Route::get('/',             fn() => view('app'));
+    Route::get('/kanban',       fn() => view('app'));
+    Route::get('/verification', fn() => view('paralegal.dashboard'));
     Route::get('/marketplace',  fn() => view('paralegal.marketplace'));
     Route::get('/wallet',       fn() => view('paralegal.wallet'));
     Route::get('/cases/{id}',   fn() => view('paralegal.case-detail'));

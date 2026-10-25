@@ -12,7 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         // Drop the check constraint created by Laravel's enum() to allow any string
-        \Illuminate\Support\Facades\DB::statement("ALTER TABLE payments DROP CONSTRAINT IF EXISTS payments_payment_type_check");
+        // PostgreSQL only: SQLite doesn't support ALTER TABLE ... DROP CONSTRAINT
+        if (\Illuminate\Support\Facades\DB::getDriverName() === 'pgsql') {
+            \Illuminate\Support\Facades\DB::statement("ALTER TABLE payments DROP CONSTRAINT IF EXISTS payments_payment_type_check");
+        }
     }
 
     /**

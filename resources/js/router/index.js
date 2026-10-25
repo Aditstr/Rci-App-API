@@ -69,12 +69,16 @@ const routes = [
         component: () => import('@/views/client/CaseChatView.vue'),
         meta: { requiresAuth: true },
     },
-    // ── Paralegal Routes (Phase 2 — placeholder) ──
+    // ── Paralegal Routes ──
     {
         path: '/paralegal',
         name: 'paralegal.dashboard',
-        component: DashboardView, // TODO: Replace with ParalegalDashboardView
+        component: () => import('@/views/paralegal/DashboardView.vue'),
         meta: { requiresAuth: true },
+    },
+    {
+        path: '/paralegal/kanban',
+        redirect: '/paralegal',
     },
     // ── Lawyer Routes (Phase 2 — placeholder) ──
     {
