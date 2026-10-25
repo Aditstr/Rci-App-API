@@ -13,6 +13,7 @@ class Subscription extends Model
 
     protected $fillable = [
         'user_id',
+        'idempotency_key',
         'plan_name',
         'price',
         'currency',

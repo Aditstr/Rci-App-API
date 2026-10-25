@@ -1,0 +1,25 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('subscriptions', function (Blueprint $table) {
+            // NULL means the purchase was made without an idempotency key.
+            $table->string('idempotency_key', 255)->nullable()->after('user_id');
+            $table->unique(['user_id', 'idempotency_key']);
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('subscriptions', function (Blueprint $table) {
+            $table->dropUnique(['user_id', 'idempotency_key']);
+            $table->dropColumn('idempotency_key');
+        });
+    }
+};
