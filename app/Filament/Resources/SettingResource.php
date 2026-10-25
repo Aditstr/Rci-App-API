@@ -4,11 +4,14 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\SettingResource\Pages;
 use App\Models\Setting;
+use App\Services\MembershipConfig;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Validation\Rule;
 
 class SettingResource extends Resource
 {
@@ -33,6 +36,7 @@ class SettingResource extends Resource
                     ->unique(ignoreRecord: true)
                     ->maxLength(255)
                     ->disabled(fn (?Setting $record) => $record !== null)
+                    ->rules([Rule::notIn(MembershipConfig::keys())])
                     ->helperText('Unique key for the setting (e.g., paralegal_sop)'),
                 
                 Forms\Components\RichEditor::make('value')
@@ -54,6 +58,11 @@ class SettingResource extends Resource
                         'undo',
                     ]),
             ]);
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()->whereNotIn('key', MembershipConfig::keys());
     }
 
     public static function table(Table $table): Table

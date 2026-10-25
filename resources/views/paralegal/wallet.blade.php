@@ -95,11 +95,17 @@
 @endsection
 
 @push('scripts')
+<script src="{{ asset('js/membership-idempotency.js') }}"></script>
 <script>
 (function() {
 const token = localStorage.getItem('rci_token');
+let currentUserId = null;
+let upgradeKey = null, upgradeBusy = false;
 
 window.onUserLoaded = function(user) {
+    const nextUserId = user && user.id ? String(user.id) : null;
+    if (currentUserId !== nextUserId) upgradeKey = null;
+    currentUserId = nextUserId;
     loadWallet();
     loadBankInfo();
     loadPendingManual();
@@ -224,19 +230,36 @@ async function doTopup() {
 }
 
 function showUpgrade() {
-    if (!confirm('Upgrade ke RCI Pro untuk konsultasi AI tak terbatas? Saldo akan dipotong Rp 50.000.')) return;
+    if (upgradeBusy) return;
+    if (!currentUserId) { showToast('Data pengguna belum siap. Coba lagi.', 'error'); return; }
+    if (!confirm('Aktifkan membership RCI? Saldo wallet akan dipotong sesuai harga membership yang berlaku.')) return;
+    if (!window.RciMembershipIdempotency) { showToast('Perlindungan transaksi gagal dimuat.', 'error'); return; }
+
+    const store = window.RciMembershipIdempotency.createStore(sessionStorage, currentUserId);
+    upgradeBusy = true;
+    upgradeKey = upgradeKey || store.get();
+    if (!upgradeKey) {
+        upgradeKey = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : Date.now() + '-' + Math.random();
+        store.set(upgradeKey);
+    }
+
     fetch('/api/v1/rci/upgrade', {
         method:'POST',
-        headers: {'Authorization':'Bearer '+token,'Accept':'application/json'}
+        headers: {'Authorization':'Bearer '+token,'Accept':'application/json','Idempotency-Key':upgradeKey}
     }).then(r=>r.json()).then(d => {
-        if (d.success) { showToast('Upgrade berhasil!'); loadWallet(); }
+        if (d.success) { upgradeKey = null; store.clear(); showToast('Upgrade berhasil!'); loadWallet(); }
         else showToast(d.message || 'Gagal','error');
-    }).catch(() => showToast('Gagal memproses upgrade','error'));
+    }).catch(() => showToast('Gagal memproses upgrade','error'))
+      .finally(() => { upgradeBusy = false; });
 }
 window.showTopup   = showTopup;
 window.showUpgrade = showUpgrade;
 window.setTopupAmt = setTopupAmt;
 window.doTopup     = doTopup;
+})();
+</script>
+@endpush
+pup     = doTopup;
 })();
 </script>
 @endpush

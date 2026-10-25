@@ -9,6 +9,7 @@ use App\Http\Resources\WalletTransactionResource;
 use App\Models\LegalCase;
 use App\Services\AiService;
 use App\Services\EscrowService;
+use App\Services\SubscriptionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -19,6 +20,7 @@ class RciApiController extends Controller
     public function __construct(
         protected AiService $aiService,
         protected EscrowService $escrowService,
+        protected SubscriptionService $subscriptionService,
     ) {}
 
     // ─── AI Chat ────────────────────────────────────────────────
@@ -125,19 +127,27 @@ class RciApiController extends Controller
     // ─── Upgrade to Pro ─────────────────────────────────────────
 
     /**
-     * Upgrade the authenticated user's membership to Pro.
+     * Buy or extend the authenticated user's membership.
      *
      * POST /api/rci/upgrade
      */
     public function upgrade(Request $request): JsonResponse
     {
         try {
-            $this->escrowService->subscribePro($request->user());
+            $subscription = $this->subscriptionService->purchase(
+                $request->user(),
+                $request->header('Idempotency-Key'),
+            );
 
             return response()->json([
                 'success' => true,
-                'message' => 'Membership upgraded to Pro successfully.',
-                'data'    => null,
+                'message' => 'Membership berhasil diaktifkan.',
+                'data'    => [
+                    'subscription_id' => $subscription->id,
+                    'price'           => $subscription->price,
+                    'starts_at'       => $subscription->starts_at->toIso8601String(),
+                    'ends_at'         => $subscription->ends_at->toIso8601String(),
+                ],
             ]);
         } catch (RuntimeException $e) {
             return response()->json([

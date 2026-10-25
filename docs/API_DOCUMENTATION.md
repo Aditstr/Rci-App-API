@@ -375,31 +375,87 @@ Menambahkan saldo ke wallet user.
 
 ### 3.2 Upgrade Membership
 
-Upgrade user ke Pro dengan memotong saldo wallet.
+Membeli atau memperpanjang membership RCI dengan memotong saldo wallet. Harga dan durasi **selalu** diambil dari konfigurasi server (`MembershipConfig`); nilai yang dikirim client diabaikan.
 
 | | |
 |---|---|
-| **URL** | `POST /api/rci/upgrade` |
-| **Auth** | 🔒 Bearer Token |
+| **URL** | `POST /api/v1/rci/upgrade` |
+| **Auth** | 🔒 Bearer Token (`role:client`) |
+| **Header wajib** | `Idempotency-Key` |
 
-**Request Body:** _none_
+**Header `Idempotency-Key`:**
+
+| Aturan | Nilai |
+|---|---|
+| Wajib | ✅ |
+| Format | `/^[A-Za-z0-9._:-]+$/` |
+| Panjang | maksimal 255 karakter |
+| Scope | per user |
+
+**Request Body:** _none_. Tidak ada field `price` atau `duration_days` yang diterima sebagai sumber harga; mengirimnya tidak mengubah nominal.
+
+**Contoh request:**
+
+```bash
+curl -X POST http://localhost:8000/api/v1/rci/upgrade \
+  -H "Authorization: Bearer <token>" \
+  -H "Accept: application/json" \
+  -H "Idempotency-Key: 6f1c2b7e-9a4d-4c1e-8f3a-2b5d7c9e1a4f"
+```
 
 **Success Response (200):**
 
 ```json
 {
   "success": true,
-  "message": "Membership upgraded to Pro successfully.",
-  "data": null
+  "message": "Membership berhasil diaktifkan.",
+  "data": {
+    "subscription_id": 12,
+    "price": "20000.00",
+    "starts_at": "2026-10-25T10:00:00+00:00",
+    "ends_at": "2026-11-24T10:00:00+00:00"
+  }
 }
 ```
 
-**Error Response (422 — Saldo tidak cukup):**
+**Perilaku pembelian dan idempotensi:**
+
+- Pembelian memotong saldo wallet, mencatat satu baris `subscriptions`, dan mencatat satu baris `wallet_transactions` bertipe `subscription_payment` dengan `reference_type` `App\Models\Subscription`.
+- Pembelian **tidak** membuat transaksi `escrow_hold` dan tidak mengubah role user.
+- Renewal saat membership masih aktif dimulai dari `ends_at` terakhir; membership kedaluwarsa atau belum ada dimulai dari waktu sekarang.
+- Request ulang dengan key yang sama dari user yang sama mengembalikan subscription yang sama **tanpa** memotong saldo lagi.
+- Key yang sama untuk user berbeda diperlakukan sebagai transaksi terpisah.
+- Renewal yang disengaja harus memakai key baru.
+- Setelah pembelian terkonfirmasi sukses, key boleh dihapus dan transaksi berikutnya memakai key baru. Setelah kegagalan yang dapat dipulihkan atau timeout, retry memakai key yang sama agar tidak terjadi debit ganda.
+
+**Error Response (422 — key tidak valid):**
 
 ```json
 {
   "success": false,
-  "message": "Saldo tidak mencukupi untuk berlangganan Pro. ...",
+  "message": "Header Idempotency-Key wajib diisi.",
+  "data": null
+}
+```
+
+Pesan lain untuk key bermasalah: `Idempotency-Key terlalu panjang (maksimal 255 karakter).` dan `Format Idempotency-Key tidak valid.`
+
+**Error Response (422 — saldo tidak cukup):**
+
+```json
+{
+  "success": false,
+  "message": "Saldo tidak mencukupi untuk membeli membership. Saldo saat ini: Rp 19.999, dibutuhkan: Rp 20.000. Silakan top-up minimal Rp 1.",
+  "data": null
+}
+```
+
+**Error Response (422 — membership nonaktif):**
+
+```json
+{
+  "success": false,
+  "message": "Membership sedang tidak tersedia untuk dibeli.",
   "data": null
 }
 ```
@@ -472,7 +528,7 @@ Mengunci dana di escrow untuk sebuah kasus hukum.
 | 5 | `POST` | `/api/chat/send` | ⚪ Optional | AI Chat (freemium) |
 | 6 | `POST` | `/api/rci/chat` | 🔒 Sanctum | AI Chat (authenticated) |
 | 7 | `POST` | `/api/rci/topup` | 🔒 Sanctum | Top up wallet |
-| 8 | `POST` | `/api/rci/upgrade` | 🔒 Sanctum | Upgrade ke Pro |
+| 8 | `POST` | `/api/v1/rci/upgrade` | 🔒 Sanctum | Beli/perpanjang membership (`Idempotency-Key` wajib) |
 | 9 | `POST` | `/api/rci/escrow/start` | 🔒 Sanctum | Lock dana escrow |
 
 ---

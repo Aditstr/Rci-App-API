@@ -318,63 +318,6 @@ class EscrowService
     }
 
     // ──────────────────────────────────────────────────────────────
-    // 4. MEMBERSHIP UPGRADE — Potong saldo buat jadi PRO
-    // ──────────────────────────────────────────────────────────────
-
-    /**
-     * Upgrade user ke status PRO/Corporate dengan memotong saldo wallet.
-     *
-     * @param  User  $user
-     * @return void
-     *
-     * @throws RuntimeException jika saldo tidak cukup
-     */
-    public function subscribePro(User $user): void
-    {
-        // Guard: jangan charge ulang jika sudah PRO
-        if ($user->role === 'corporate') {
-            throw new RuntimeException('User sudah berstatus PRO/Corporate.');
-        }
-
-        $price = 50000.00; // Harga Paket PRO
-        $priceStr = number_format($price, 2, '.', '');
-
-        DB::transaction(function () use ($user, $priceStr) {
-            // Ambil & Kunci Wallet User
-            $wallet = Wallet::where('user_id', $user->id)->lockForUpdate()->first();
-
-            if (! $wallet) {
-                throw new RuntimeException("User belum memiliki wallet. Silakan top-up terlebih dahulu.");
-            }
-
-            // Cek Saldo (Pakai bccomp biar akurat seperti function lain)
-            if (bccomp($wallet->balance, $priceStr, 2) < 0) {
-                throw new RuntimeException(
-                    "Saldo tidak cukup untuk upgrade PRO. Dibutuhkan: Rp " . number_format((float) $priceStr, 0, ',', '.')
-                );
-            }
-
-            // 1. Potong Saldo
-            $wallet->debit($priceStr);
-
-            // 2. Catat Transaksi (pakai 'withdrawal' agar sesuai CHECK constraint di DB)
-            WalletTransaction::create([
-                'wallet_id'      => $wallet->id,
-                'amount'         => $priceStr,
-                'type'           => 'withdrawal',
-                'status'         => 'success',
-                'reference_type' => 'subscription',
-                'reference_id'   => $user->id,
-                'description'    => 'Pembayaran Membership PRO',
-            ]);
-
-            // 3. Update Status User
-            $user->role = 'corporate';
-            $user->save();
-        });
-    }
-
-    // ──────────────────────────────────────────────────────────────
     // 5. REFUND ESCROW — Kembalikan dana ke pembayar jika kasus batal
     // ──────────────────────────────────────────────────────────────
 
