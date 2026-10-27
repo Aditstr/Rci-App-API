@@ -200,10 +200,8 @@ PROMPT;
      */
     public function chat(string $message, ?User $user = null): array
     {
-        // 1. Cek User (Gue sesuaikan logika cek rolenya biar aman)
-        // Kalau lu udah yakin method hasActiveSubscription() ada di Model User, pakai itu.
-        // Kalau belum, pakai cek role manual ini:
-        $isPro = $user && in_array($user->role ?? '', ['corporate', 'lawyer']); 
+        // Membership tier comes from an active subscription, never from role.
+        $isPro = $user !== null && $user->hasActiveSubscription();
         
         $topic = $this->detectTopic($message);
 
