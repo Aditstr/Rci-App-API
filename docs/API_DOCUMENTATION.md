@@ -189,42 +189,41 @@ Mengembalikan data user yang sedang login beserta saldo wallet.
 
 ## 2. AI Chat Endpoints
 
-### 2.1 Chat Send (Freemium)
+### 2.1 Chat Send
 
-Mengirim pesan ke AI assistant. Bisa digunakan tanpa login (guest).
-Guest & free user memiliki **batas 3 pertanyaan/hari**. Pro member **unlimited**.
+Mengirim pesan ke AI assistant. Hanya tersedia untuk client dengan **subscription membership aktif** (lihat Milestone 3A). Guest dan user tanpa subscription aktif ditolak.
+
+Setiap member mendapat maksimal **3 pertanyaan AI per hari**, diambil dari `MembershipConfig::aiDailyLimit()`. Kuota direset pukul **00.00 WIB (Asia/Jakarta)** dan dipakai bersama oleh kedua endpoint AI untuk user yang sama.
 
 | | |
 |---|---|
 | **URL** | `POST /api/chat/send` |
-| **Auth** | ⚪ Optional (supports guest) |
+| **Auth** | 🔒 Bearer Token (wajib secara kebijakan) |
 
 **Request Body:**
 
 ```json
 {
-  "message": "Apa itu hukum perdata?",
-  "session_id": "optional-uuid-for-guests",
-  "user_id": 1
+  "message": "Apa itu hukum perdata?"
 }
 ```
 
 | Field | Type | Required | Notes |
 |---|---|---|---|
 | `message` | string | ✅ | max 2000 |
-| `session_id` | string | ❌ | Untuk tracking guest (opsional) |
-| `user_id` | integer | ❌ | Untuk testing tanpa auth token |
 
-**Success Response — Free/Guest (200):**
+Field `session_id` dan `user_id` tidak lagi dipakai sebagai identitas kuota.
+
+**Success Response (200):**
 
 ```json
 {
   "status": "success",
-  "tier": "free",
+  "tier": "pro",
   "data": {
     "answer": "Hukum perdata adalah cabang hukum yang mengatur hubungan...",
     "topic": "hukum_perdata",
-    "confidence": 0.85,
+    "confidence": 0.95,
     "system_prompt": "...",
     "disclaimer": "..."
   },
@@ -232,28 +231,6 @@ Guest & free user memiliki **batas 3 pertanyaan/hari**. Pro member **unlimited**
     "limit": 3,
     "used": 1,
     "remaining": 2
-  },
-  "upgrade_cta": null
-}
-```
-
-**Success Response — Pro (200):**
-
-```json
-{
-  "status": "success",
-  "tier": "pro",
-  "data": {
-    "answer": "Berdasarkan Pasal 1320 KUHPerdata, syarat sahnya perjanjian...",
-    "topic": "hukum_perdata",
-    "confidence": 0.95,
-    "system_prompt": "...",
-    "disclaimer": "..."
-  },
-  "usage": {
-    "limit": null,
-    "used": null,
-    "remaining": "unlimited"
   },
   "escalation": {
     "can_escalate": true,
@@ -263,14 +240,13 @@ Guest & free user memiliki **batas 3 pertanyaan/hari**. Pro member **unlimited**
 }
 ```
 
-**Rate Limited Response (429):**
+**Quota Exhausted (429):**
 
 ```json
 {
   "status": "forbidden",
-  "tier": "free",
-  "message": "Anda telah mencapai batas 3 pertanyaan gratis hari ini...",
-  "upgrade_url": "http://localhost:8000/pricing",
+  "tier": "pro",
+  "message": "Anda telah mencapai batas 3 pertanyaan AI hari ini. Kuota diperbarui pukul 00.00 WIB.",
   "usage": {
     "limit": 3,
     "used": 3,
@@ -279,16 +255,47 @@ Guest & free user memiliki **batas 3 pertanyaan/hari**. Pro member **unlimited**
 }
 ```
 
+**Not a Member / Guest (403):**
+
+```json
+{
+  "status": "forbidden",
+  "tier": "free",
+  "message": "AI Assistant hanya tersedia untuk member dengan subscription aktif.",
+  "usage": {
+    "limit": 3,
+    "used": 0,
+    "remaining": 0
+  }
+}
+```
+
+**Service Unavailable (503):** dikembalikan ketika semua provider AI gagal (fallback statis) atau cache/database kuota error. Kuota dikembalikan bila sebelumnya sudah dikonsumsi.
+
+```json
+{
+  "status": "error",
+  "message": "Layanan AI sedang tidak tersedia. Silakan coba lagi sesaat lagi.",
+  "usage": {
+    "limit": 3,
+    "used": 0,
+    "remaining": 3
+  }
+}
+```
+
 ---
 
 ### 2.2 Chat (Authenticated)
 
-Sama seperti Chat Send, tetapi hanya untuk user yang sudah login (via Sanctum).
+Aturan kuota sama dengan Chat Send dan memakai counter yang sama per user.
 
 | | |
 |---|---|
 | **URL** | `POST /api/rci/chat` |
 | **Auth** | 🔒 Bearer Token |
+
+Role `lawyer`, `paralegal`, dan `corporate` tidak memberikan akses Pro tanpa subscription aktif.
 
 **Request Body:**
 
@@ -308,15 +315,30 @@ Sama seperti Chat Send, tetapi hanya untuk user yang sudah login (via Sanctum).
 {
   "success": true,
   "message": "AI response generated successfully.",
+  "tier": "pro",
   "data": {
     "answer": "...",
     "topic": "perceraian",
-    "confidence": 0.9,
-    "system_prompt": "...",
+    "confidence": 0.95,
     "disclaimer": "..."
+  },
+  "usage": {
+    "limit": 3,
+    "used": 1,
+    "remaining": 2
   }
 }
 ```
+
+**Error Responses:**
+
+| Status | Kondisi | Body |
+|---|---|---|
+| `401` | Token tidak valid | `{"message": "Unauthenticated."}` |
+| `403` | Tidak ada subscription aktif | `{"success": false, "tier": "free", "message": "...", "data": null, "usage": {...}}` |
+| `422` | `message` tidak valid | `{"success": false, "message": "...", "data": null}` |
+| `429` | Kuota harian habis | `{"success": false, "tier": "pro", "message": "...", "data": null, "usage": {...}}` |
+| `503` | Provider AI atau cache kuota gagal | `{"success": false, "message": "...", "data": null, "usage": {...}}` |
 
 ---
 
@@ -525,8 +547,8 @@ Mengunci dana di escrow untuk sebuah kasus hukum.
 | 2 | `POST` | `/api/auth/login` | ❌ Public | Login & dapat token |
 | 3 | `POST` | `/api/auth/logout` | 🔒 Sanctum | Revoke token |
 | 4 | `GET` | `/api/auth/me` | 🔒 Sanctum | Get profile + wallet |
-| 5 | `POST` | `/api/chat/send` | ⚪ Optional | AI Chat (freemium) |
-| 6 | `POST` | `/api/rci/chat` | 🔒 Sanctum | AI Chat (authenticated) |
+| 5 | `POST` | `/api/chat/send` | 🔒 Bearer (member) | AI Chat (member, 3/hari) |
+| 6 | `POST` | `/api/rci/chat` | 🔒 Sanctum (member) | AI Chat (member, 3/hari) |
 | 7 | `POST` | `/api/rci/topup` | 🔒 Sanctum | Top up wallet |
 | 8 | `POST` | `/api/v1/rci/upgrade` | 🔒 Sanctum | Beli/perpanjang membership (`Idempotency-Key` wajib) |
 | 9 | `POST` | `/api/rci/escrow/start` | 🔒 Sanctum | Lock dana escrow |

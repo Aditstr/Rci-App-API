@@ -185,21 +185,11 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser
     }
 
     /**
-     * Check if user has an active Pro subscription.
+     * Membership comes only from an active subscription period.
+     * Role never grants it, and a database error must not look like "no membership".
      */
     public function hasActiveSubscription(): bool
     {
-        if (in_array($this->role ?? '', ['corporate', 'lawyer'])) {
-            return true;
-        }
-
-        try {
-            return $this->subscriptions()
-                ->where('status', 'active')
-                ->where('ends_at', '>', now())
-                ->exists();
-        } catch (\Throwable $e) {
-            return false;
-        }
+        return $this->subscriptions()->active()->exists();
     }
 }

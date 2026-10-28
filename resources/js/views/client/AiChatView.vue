@@ -1,8 +1,9 @@
 <script setup>
-import { ref, onMounted, nextTick } from 'vue';
+import { ref, computed, onMounted, nextTick } from 'vue';
 import { useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import api from '@/services/api';
+import { quotaLabel } from '@/utils/ai-quota';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -32,6 +33,32 @@ const messages = ref([
 const inputPrompt = ref('');
 const sending = ref(false);
 const chatContainer = ref(null);
+const usage = ref(null);
+
+const quotaText = computed(() => quotaLabel(usage.value));
+
+const errorMessage = (err) => {
+    const status = err.response?.status;
+    const server = err.response?.data?.message;
+
+    if (status === 401) {
+        return 'Sesi Anda berakhir. Silakan login kembali untuk melanjutkan.';
+    }
+
+    if (status === 403) {
+        return server || 'AI Assistant hanya tersedia untuk member dengan subscription aktif.';
+    }
+
+    if (status === 429) {
+        return server || 'Kuota pertanyaan AI hari ini sudah habis. Kuota diperbarui pukul 00.00 WIB.';
+    }
+
+    if (status === 503) {
+        return server || 'Layanan AI sedang tidak tersedia. Silakan coba lagi sesaat lagi.';
+    }
+
+    return server || 'Terjadi kendala jaringan saat menghubungi layanan AI. Silakan coba kembali sesaat lagi.';
+};
 
 const suggestions = [
     'Syarat sah perjanjian menurut Pasal 1320 KUHPerdata',
@@ -77,6 +104,8 @@ const handleSend = async (customText = null) => {
             response.data.reply,
         ].find((value) => typeof value === 'string' && value.trim());
 
+        usage.value = response.data.usage ?? null;
+
         messages.value.push({
             role: 'assistant',
             content: reply || 'Maaf, jawaban AI belum tersedia. Silakan coba kembali.',
@@ -84,11 +113,16 @@ const handleSend = async (customText = null) => {
             isError: !reply,
         });
     } catch (err) {
+        const status = err.response?.status;
+
+        // 403 means no membership, not an exhausted quota; do not show a quota label for it.
+        if (status === 429 || status === 503) {
+            usage.value = err.response?.data?.usage ?? usage.value;
+        }
+
         messages.value.push({
             role: 'assistant',
-            content:
-                err.response?.data?.message ||
-                'Terjadi kendala jaringan saat menghubungi layanan AI. Silakan coba kembali sesaat lagi.',
+            content: errorMessage(err),
             time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             isError: true,
         });
@@ -121,6 +155,9 @@ onMounted(() => {
                         </h2>
                         <p class="text-xs text-black/50">
                             Model Analisis Regulasi & Peraturan Perundang-Undangan Indonesia
+                        </p>
+                        <p v-if="quotaText" class="text-xs font-semibold text-[#fc5000] mt-1">
+                            {{ quotaText }}
                         </p>
                     </div>
                 </div>

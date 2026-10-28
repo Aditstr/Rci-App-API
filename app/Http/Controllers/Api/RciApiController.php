@@ -7,12 +7,14 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\WalletTransactionResource;
 use App\Models\LegalCase;
+use App\Services\AiQuotaService;
 use App\Services\AiService;
 use App\Services\EscrowService;
 use App\Services\SubscriptionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 class RciApiController extends Controller
@@ -21,6 +23,7 @@ class RciApiController extends Controller
         protected AiService $aiService,
         protected EscrowService $escrowService,
         protected SubscriptionService $subscriptionService,
+        protected AiQuotaService $aiQuota,
     ) {}
 
     // ─── AI Chat ────────────────────────────────────────────────
@@ -37,41 +40,113 @@ class RciApiController extends Controller
             'message' => 'required|string|max:2000',
         ]);
 
+        $user = $request->user();
+
+        // Consume before calling the provider so parallel requests cannot pass the limit.
+        try {
+            $quota = $this->aiQuota->consume($user);
+        } catch (\Throwable $e) {
+            Log::error('RciApiController quota error: ' . $e->getMessage());
+
+            return $this->chatServiceUnavailable();
+        }
+
+        if (! $quota['allowed']) {
+            return $this->chatDenied($quota);
+        }
+
         try {
             $result = $this->aiService->chat(
                 $request->message,
-                $request->user(),
+                $user,
             );
-
-            return response()->json([
-                'success' => true,
-                'message' => 'AI response generated successfully.',
-                'data'    => $result,
-            ]);
         } catch (RuntimeException $e) {
+            if ($this->refundUsage($quota) === null) {
+                return $this->chatServiceUnavailable();
+            }
+
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage(),
                 'data'    => null,
             ], 422);
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('RciApiController chat error: ' . $e->getMessage(), [
+            Log::error('RciApiController chat error: ' . $e->getMessage(), [
                 'file'  => $e->getFile(),
                 'line'  => $e->getLine(),
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'AI response generated via fallback.',
-                'data'    => [
-                    'answer'     => 'Terima kasih atas pertanyaan Anda. Permasalahan yang Anda sampaikan berkaitan dengan ranah hukum di Indonesia. Silakan berikan rincian kronologi atau konsultasikan langsung dengan Paralegal kami.',
-                    'topic'      => 'umum',
-                    'confidence' => 0.50,
-                    'disclaimer' => 'Jawaban bersifat umum. Hubungi Paralegal kami untuk bantuan langkah teknis.',
-                ],
-            ]);
+            return $this->chatServiceUnavailable($this->refundUsage($quota));
         }
+
+        if ($result['fallback'] ?? false) {
+            return $this->chatServiceUnavailable($this->refundUsage($quota));
+        }
+
+        unset($result['fallback']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'AI response generated successfully.',
+            'tier'    => 'pro',
+            'data'    => $result,
+            'usage'   => [
+                'limit'     => $quota['limit'],
+                'used'      => $quota['used'],
+                'remaining' => $quota['remaining'],
+            ],
+        ]);
+    }
+
+    /**
+     * @param  array{allowed: bool, reason: string|null, limit: int, used: int, remaining: int, key: string|null}  $quota
+     */
+    private function chatDenied(array $quota): JsonResponse
+    {
+        $exhausted = $quota['reason'] === 'quota_exhausted';
+
+        return response()->json([
+            'success' => false,
+            'tier'    => $exhausted ? 'pro' : 'free',
+            'message' => $exhausted
+                ? 'Anda telah mencapai batas ' . $quota['limit'] . ' pertanyaan AI hari ini. Kuota diperbarui pukul 00.00 WIB.'
+                : 'AI Assistant hanya tersedia untuk member dengan subscription aktif.',
+            'data'    => null,
+            'usage'   => [
+                'limit'     => $quota['limit'],
+                'used'      => $quota['used'],
+                'remaining' => $quota['remaining'],
+            ],
+        ], $exhausted ? 429 : 403);
+    }
+
+    /**
+     * @param  array{allowed: bool, reason: string|null, limit: int, used: int, remaining: int, key: string|null}  $quota
+     * @return array{limit: int, used: int, remaining: int}|null
+     */
+    private function refundUsage(array $quota): ?array
+    {
+        try {
+            return $this->aiQuota->refund($quota);
+        } catch (\Throwable $e) {
+            Log::error('RciApiController refund error: ' . $e->getMessage());
+
+            return null;
+        }
+    }
+
+    /**
+     * @param  array{limit: int, used: int, remaining: int}|null  $usage
+     */
+    private function chatServiceUnavailable(?array $usage = null): JsonResponse
+    {
+        return response()->json([
+            'success' => false,
+            'message' => 'Layanan AI sedang tidak tersedia. Silakan coba lagi sesaat lagi.',
+            'data'    => null,
+            'usage'   => $usage,
+        ], 503);
     }
 
     /**

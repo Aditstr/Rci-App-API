@@ -57,7 +57,7 @@ class AppServiceProvider extends ServiceProvider
         // AI Chat: 10 requests per minute per user/IP
         RateLimiter::for('ai_chat', function (Request $request) {
             return Limit::perMinute(10)->by(
-                $request->user()?->id ?: $request->ip()
+                $request->user('sanctum')?->id ?: $request->ip()
             )->response(function () {
                 return response()->json([
                     'success' => false,

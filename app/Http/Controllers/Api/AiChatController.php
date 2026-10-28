@@ -5,141 +5,132 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
+use App\Services\AiQuotaService;
 use App\Services\AiService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
 
 class AiChatController extends Controller
 {
-    /**
-     * Maximum free questions per day for guests & free users.
-     */
-    private const FREE_LIMIT = 3;
-
-    /**
-     * Cache TTL: seconds remaining until midnight (daily reset).
-     */
-    private function ttlUntilMidnight(): int
-    {
-        return (int) now()->diffInSeconds(now()->endOfDay());
-    }
-
     public function __construct(
         private readonly AiService $ai,
+        private readonly AiQuotaService $quota,
     ) {}
 
     /**
      * POST /api/chat/send
      *
-     * Accept a chat message, enforce freemium limits, and return an AI response.
+     * Resolve the Sanctum user even though this route has no auth middleware,
+     * then consume the daily quota before calling any AI provider.
      *
-     * @param  Request  $request  {message: string, session_id?: string, user_id?: int}
+     * @param  Request  $request  {message: string}
      */
     public function send(Request $request): JsonResponse
     {
         $request->validate([
-            'message'    => ['required', 'string', 'max:2000'],
-            'session_id' => ['nullable', 'string', 'max:100'],
+            'message' => ['required', 'string', 'max:2000'],
         ]);
 
         $message = $request->input('message');
+        $user = $request->user('sanctum');
 
-        // Resolve authenticated user via Sanctum only (no manual user_id bypass).
-        $user = $request->user();
-
-        // ── Pro Member → unlimited access ────────────────────────
-        if ($user && $user->hasActiveSubscription()) {
-            $aiResponse = $this->ai->chat($message, $user);
-
-            return response()->json([
-                'status' => 'success',
-                'tier'   => 'pro',
-                'data'   => $aiResponse,
-                'usage'  => [
-                    'limit'     => null,
-                    'used'      => null,
-                    'remaining' => 'unlimited',
-                ],
-                'escalation' => [
-                    'can_escalate' => true,
-                    'message'      => 'Sebagai member Pro, Anda dapat terhubung langsung dengan Paralegal/Advokat.',
-                    'escalate_url' => url('/api/chat/escalate'),
-                ],
-            ]);
-        }
-
-        // ── Guest / Free User → enforce daily limit ──────────────
-        $cacheKey = $this->resolveCacheKey($user, $request->input('session_id'), $request->ip());
-        $used     = (int) Cache::get($cacheKey, 0);
-
-        if ($used >= self::FREE_LIMIT) {
-            return response()->json([
-                'status'  => 'forbidden',
-                'tier'    => $user ? 'free' : 'guest',
-                'message' => 'Anda telah mencapai batas ' . self::FREE_LIMIT . ' pertanyaan gratis hari ini. '
-                           . 'Silakan upgrade ke Pro untuk akses tak terbatas dan konsultasi langsung dengan ahli hukum.',
-                'upgrade_url' => url('/pricing'),
-                'usage'  => [
-                    'limit'     => self::FREE_LIMIT,
-                    'used'      => $used,
-                    'remaining' => 0,
-                ],
-            ], 429);
-        }
-
-        // Process the message via AI
         try {
-            $aiResponse = $this->ai->chat($message, $user);
+            $quota = $this->quota->consume($user);
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('AiChatController send error: ' . $e->getMessage());
-            $aiResponse = [
-                'answer'     => 'Terima kasih atas pertanyaan Anda. Permasalahan yang Anda sampaikan berkaitan dengan ranah hukum di Indonesia. Silakan berikan rincian kronologi atau konsultasikan langsung dengan Paralegal kami.',
-                'topic'      => 'umum',
-                'confidence' => 0.50,
-                'disclaimer' => 'Jawaban bersifat umum. Hubungi Paralegal kami untuk bantuan langkah teknis.',
-            ];
+            Log::error('AiChatController quota error: ' . $e->getMessage());
+
+            return $this->serviceUnavailable();
         }
 
-        // Increment usage counter (expires at midnight)
-        Cache::put($cacheKey, $used + 1, $this->ttlUntilMidnight());
+        if (! $quota['allowed']) {
+            return $this->denied($quota);
+        }
+
+        try {
+            $answer = $this->ai->chat($message, $user);
+        } catch (\Throwable $e) {
+            Log::error('AiChatController send error: ' . $e->getMessage());
+
+            return $this->serviceUnavailable($this->refundUsage($quota));
+        }
+
+        if ($answer['fallback'] ?? false) {
+            return $this->serviceUnavailable($this->refundUsage($quota));
+        }
+
+        unset($answer['fallback']);
 
         return response()->json([
             'status' => 'success',
-            'tier'   => $user ? 'free' : 'guest',
-            'data'   => $aiResponse,
+            'tier'   => 'pro',
+            'data'   => $answer,
             'usage'  => [
-                'limit'     => self::FREE_LIMIT,
-                'used'      => $used + 1,
-                'remaining' => self::FREE_LIMIT - ($used + 1),
+                'limit'     => $quota['limit'],
+                'used'      => $quota['used'],
+                'remaining' => $quota['remaining'],
             ],
-            'upgrade_cta' => ($used + 1) >= 2
-                ? 'Sisa ' . (self::FREE_LIMIT - ($used + 1)) . ' pertanyaan gratis. Upgrade ke Pro untuk akses unlimited!'
-                : null,
+            'escalation' => [
+                'can_escalate' => true,
+                'message'      => 'Sebagai member Pro, Anda dapat terhubung langsung dengan Paralegal/Advokat.',
+                'escalate_url' => url('/api/chat/escalate'),
+            ],
         ]);
     }
 
     /**
-     * Build a unique cache key per user or guest session.
-     *
-     * - Logged-in user  → "ai_chat_usage:user:{id}"
-     * - Guest           → "ai_chat_usage:session:{session_id}"
+     * @param  array{allowed: bool, reason: string|null, limit: int, used: int, remaining: int, key: string|null}  $quota
      */
-    private function resolveCacheKey(?User $user, ?string $sessionId, ?string $ipAddress = null): string
+    private function denied(array $quota): JsonResponse
     {
-        if ($user) {
-            return "ai_chat_usage:user:{$user->id}";
-        }
+        $exhausted = $quota['reason'] === 'quota_exhausted';
 
-        // Use IP address as primary key for guests to prevent rate limit bypass
-        if ($ipAddress) {
-            return "ai_chat_usage:ip:{$ipAddress}";
-        }
+        $message = match ($quota['reason']) {
+            'guest'           => 'Silakan login dan aktifkan membership untuk menggunakan AI Assistant.',
+            'not_member'      => 'AI Assistant hanya tersedia untuk member dengan subscription aktif.',
+            default           => 'Anda telah mencapai batas ' . $quota['limit'] . ' pertanyaan AI hari ini. Kuota diperbarui pukul 00.00 WIB.',
+        };
 
-        // Fallback to session_id (but prefer IP)
-        $sessionId = $sessionId ?: 'unknown';
-        return "ai_chat_usage:session:{$sessionId}";
+        return response()->json([
+            'status'  => 'forbidden',
+            'tier'    => match ($quota['reason']) {
+                'guest'      => 'guest',
+                'not_member' => 'free',
+                default      => 'pro',
+            },
+            'message' => $message,
+            'usage'   => [
+                'limit'     => $quota['limit'],
+                'used'      => $quota['used'],
+                'remaining' => $quota['remaining'],
+            ],
+        ], $exhausted ? 429 : 403);
+    }
+
+    /**
+     * @param  array{limit: int, used: int, remaining: int, key: string|null}  $quota
+     * @return array{limit: int, used: int, remaining: int}|null
+     */
+    private function refundUsage(array $quota): ?array
+    {
+        try {
+            return $this->quota->refund($quota);
+        } catch (\Throwable $e) {
+            Log::error('AiChatController refund error: ' . $e->getMessage());
+
+            return null;
+        }
+    }
+
+    /**
+     * @param  array{limit: int, used: int, remaining: int}|null  $usage
+     */
+    private function serviceUnavailable(?array $usage = null): JsonResponse
+    {
+        return response()->json([
+            'status'  => 'error',
+            'message' => 'Layanan AI sedang tidak tersedia. Silakan coba lagi sesaat lagi.',
+            'usage'   => $usage,
+        ], 503);
     }
 }
