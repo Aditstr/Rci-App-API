@@ -123,6 +123,9 @@ Route::prefix('v1')->group(function () {
         // AI Chat — all authenticated & verified users
         Route::post('/chat', [RciApiController::class, 'chat'])->name('api.v1.rci.chat');
 
+        // Membership info - all authenticated users; purchase stays client-only
+        Route::get('/membership', [RciApiController::class, 'membership'])->name('api.v1.rci.membership');
+
         // Wallet Info — all authenticated users (client, paralegal, lawyer)
         Route::get('/wallet',              [WalletController::class, 'show'])->name('api.v1.rci.wallet.show');
         Route::get('/wallet/transactions', [WalletController::class, 'transactions'])->name('api.v1.rci.wallet.transactions');

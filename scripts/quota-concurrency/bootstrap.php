@@ -57,7 +57,6 @@ function quota_test_boot(): Application
         'CACHE_STORE' => 'database',
         'APP_DEBUG' => 'false',
         'GEMINI_API_KEY' => '',
-        'OPENROUTER_API_KEY' => '',
     ];
 
     foreach ($overrides as $key => $value) {

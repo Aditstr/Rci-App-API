@@ -34,7 +34,6 @@ class AiQuotaTest extends TestCase
         config([
             'services.gemini.api_key' => 'test-key',
             'services.gemini.model' => 'test-model',
-            'services.openrouter.api_key' => null,
         ]);
 
         Http::fake(function () {

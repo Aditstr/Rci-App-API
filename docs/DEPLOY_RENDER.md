@@ -64,7 +64,7 @@ RCI adalah aplikasi konsultasi hukum multi-peran yang menjalankan frontend Blade
 ### AI dan RAG
 
 - Chat AI publik dibatasi dengan rate limit.
-- Model dapat memakai Gemini atau OpenRouter melalui environment variable.
+- Model AI menggunakan Google Gemini melalui environment variable.
 - Dokumen pengetahuan `.txt`/`.md` dapat dimasukkan memakai perintah `rag:import`.
 - Respons AI bukan pengganti pendapat hukum profesional; konten dan batas pemakaian tetap harus diawasi.
 
@@ -148,7 +148,7 @@ Siapkan sebelum deploy:
 3. OAuth Client bertipe Web Application di Google Cloud.
 4. SMTP/Resend untuk verifikasi email dan reset password.
 5. Xendit untuk pembayaran, jika pembayaran akan diuji.
-6. Gemini/OpenRouter, jika fitur AI akan diaktifkan.
+6. Gemini, jika fitur AI akan diaktifkan.
 
 Render merekomendasikan URL PostgreSQL internal untuk service yang berada pada account dan region yang sama karena latensinya lebih rendah. Blueprint proyek menghubungkannya ke `DB_URL`, yaitu nama variabel yang benar-benar dibaca oleh konfigurasi Laravel. Lihat [dokumentasi Render Postgres](https://render.com/docs/postgresql-creating-connecting).
 
@@ -278,13 +278,11 @@ Mulai dengan mode development/sandbox. Cocokkan token callback dengan `XENDIT_WE
 
 ### AI
 
-Aktifkan salah satu atau keduanya:
+Aktifkan Google Gemini:
 
 ```dotenv
 GEMINI_API_KEY=...
-GEMINI_MODEL=...
-OPENROUTER_API_KEY=...
-OPENROUTER_MODEL=...
+GEMINI_MODEL=gemini-2.5-flash
 ```
 
 Terapkan limit biaya dan monitoring pada dashboard provider. Jangan menyimpan API key di frontend.

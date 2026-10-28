@@ -539,6 +539,49 @@ Mengunci dana di escrow untuk sebuah kasus hukum.
 
 ---
 
+### 3.4 Membership Info (read-only)
+
+Mengembalikan konfigurasi membership yang berlaku, status subscription pengguna, pemakaian kuota AI hari ini, dan apakah akun boleh membeli. Hanya membaca data; tidak membuat wallet atau mengubah subscription.
+
+| | |
+|---|---|
+| **URL** | `GET /api/v1/rci/membership` |
+| **Auth** | 🔒 Bearer Token (`auth:sanctum`, `active`, `verified`) |
+
+**Success Response (200):**
+
+```json
+{
+  "success": true,
+  "message": "Informasi membership berhasil diambil.",
+  "data": {
+    "config": {
+      "price": 20000,
+      "duration_days": 30,
+      "ai_daily_limit": 3,
+      "enabled": true
+    },
+    "status": {
+      "is_pro": true,
+      "plan": "pro",
+      "starts_at": "2026-10-25T10:00:00+00:00",
+      "ends_at": "2026-11-24T10:00:00+00:00",
+      "days_left": 30
+    },
+    "usage": {
+      "limit": 3,
+      "used": 1,
+      "remaining": 2
+    },
+    "can_purchase": true
+  }
+}
+```
+
+`status.starts_at`, `status.ends_at`, dan `status.days_left` bernilai `null` bila belum ada subscription aktif. `can_purchase` hanya `true` untuk role `client`; pembelian tetap memakai `POST /api/v1/rci/upgrade`.
+
+---
+
 ## 📋 Route Summary
 
 | # | Method | Endpoint | Auth | Description |
@@ -551,7 +594,8 @@ Mengunci dana di escrow untuk sebuah kasus hukum.
 | 6 | `POST` | `/api/rci/chat` | 🔒 Sanctum (member) | AI Chat (member, 3/hari) |
 | 7 | `POST` | `/api/rci/topup` | 🔒 Sanctum | Top up wallet |
 | 8 | `POST` | `/api/v1/rci/upgrade` | 🔒 Sanctum | Beli/perpanjang membership (`Idempotency-Key` wajib) |
-| 9 | `POST` | `/api/rci/escrow/start` | 🔒 Sanctum | Lock dana escrow |
+| 9 | `GET` | `/api/v1/rci/membership` | 🔒 Sanctum | Info harga, status, dan kuota membership |
+| 10 | `POST` | `/api/rci/escrow/start` | 🔒 Sanctum | Lock dana escrow |
 
 ---
 

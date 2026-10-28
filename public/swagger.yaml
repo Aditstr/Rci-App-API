@@ -1215,8 +1215,27 @@ paths:
           description: OK
 
   # ────────────────────────────────────────────────
-  # Wallet Info
+  # Membership & Wallet Info
   # ────────────────────────────────────────────────
+  /rci/membership:
+    get:
+      summary: Get Membership Info
+      description: |
+        Read-only membership configuration and the authenticated user's status.
+
+        - `config` is the current server price, duration, AI daily limit, and
+          enabled flag. Purchase never trusts client-supplied values.
+        - `status` reports the active subscription window, or `is_pro: false`.
+        - `usage` is today's AI quota for this user.
+        - `can_purchase` is true only for `role:client`.
+        - Requires `auth:sanctum` + `active` + `verified`.
+      tags:
+        - Payment & Wallet
+      responses:
+        '200':
+          description: Membership configuration and status
+        '401':
+          description: Unauthenticated
   /rci/wallet:
     get:
       summary: Get Wallet Balance

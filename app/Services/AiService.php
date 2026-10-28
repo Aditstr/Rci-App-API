@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\User;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -235,9 +236,8 @@ PROMPT;
         $systemPrompt = $isPro ? self::SYSTEM_PROMPT_PRO : self::SYSTEM_PROMPT_FREE;
         $systemPrompt .= $retrievedDocsText;
 
-        // 4. Kirim ke AI API (Gemini → OpenRouter → Static Fallback)
-        $aiAnswer = $this->callGemini($systemPrompt, $message)
-                 ?? $this->callOpenRouter($systemPrompt, $message);
+        // 4. Kirim ke Gemini API; fallback statis jika gagal.
+        $aiAnswer = $this->callGemini($systemPrompt, $message);
 
         if ($aiAnswer !== null) {
             return [
@@ -265,20 +265,28 @@ PROMPT;
     // ──────────────────────────────────────────────
 
     /**
-     * Call Google Gemini API (generativelanguage.googleapis.com)
+     * Call Google Gemini API (generativelanguage.googleapis.com).
      */
     private function callGemini(string $systemPrompt, string $message): ?string
     {
-        $apiKey = config('services.gemini.api_key');
-        if (empty($apiKey)) {
+        $apiKey = (string) config('services.gemini.api_key');
+
+        if ($apiKey === '') {
+            Log::error('Gemini API key is not configured.');
+
             return null;
         }
 
-        $model = config('services.gemini.model', 'gemini-1.5-flash');
+        $model = (string) config('services.gemini.model', 'gemini-2.5-flash');
 
         try {
-            $response = Http::timeout(20)
-                ->post("https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key={$apiKey}", [
+            // Gemini can exceed 20s on long answers; the key stays in a header so
+            // connection errors cannot leak it through the request URL.
+            $response = Http::withHeaders(['x-goog-api-key' => $apiKey])
+                ->acceptJson()
+                ->connectTimeout(5)
+                ->timeout(45)
+                ->post("https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent", [
                     'system_instruction' => [
                         'parts' => [['text' => $systemPrompt]],
                     ],
@@ -291,64 +299,52 @@ PROMPT;
                     ],
                 ]);
 
+            if (! $response->successful()) {
+                $this->logGeminiError($response);
+
+                return null;
+            }
+
             $content = $response->json('candidates.0.content.parts.0.text');
 
-            if ($response->successful() && !empty($content)) {
-                return $content;
-            }
-
-            Log::error('Gemini API Error: ' . $response->status() . ' - ' . $response->body());
-        } catch (\Throwable $e) {
-            Log::error('Gemini Exception: ' . $e->getMessage());
-        }
-
-        return null;
-    }
-
-    /**
-     * Call OpenRouter API (openai-compatible)
-     */
-    private function callOpenRouter(string $systemPrompt, string $message): ?string
-    {
-        $apiKey = config('services.openrouter.api_key');
-        if (empty($apiKey)) {
-            return null;
-        }
-
-        // Model dengan fallback ke model yang pasti tersedia
-        $model = config('services.openrouter.model', 'google/gemini-flash-1.5-8b');
-
-        try {
-            $response = Http::withToken($apiKey)
-                ->timeout(20)
-                ->withHeaders([
-                    'HTTP-Referer' => config('app.url'),
-                    'X-Title'      => config('app.name'),
-                ])
-                ->post('https://openrouter.ai/api/v1/chat/completions', [
-                    'model'    => $model,
-                    'messages' => [
-                        ['role' => 'system', 'content' => $systemPrompt],
-                        ['role' => 'user',   'content' => $message],
-                    ],
-                    'temperature' => 0.5,
-                    'max_tokens'  => 4096,
+            if (! is_string($content) || trim($content) === '') {
+                Log::warning('Gemini returned no usable text.', [
+                    'model'         => $model,
+                    'finish_reason' => $response->json('candidates.0.finishReason'),
+                    'block_reason'  => $response->json('promptFeedback.blockReason'),
                 ]);
 
-            $content = $response->json('choices.0.message.content');
-
-            if ($response->successful() && !empty($content)) {
-                return $content;
+                return null;
             }
 
-            Log::error('OpenRouter API Error: ' . $response->status() . ' - ' . $response->body());
+            return $content;
         } catch (\Throwable $e) {
-            Log::error('OpenRouter Exception: ' . $e->getMessage());
-        }
+            Log::error('Gemini request failed.', [
+                'model'     => $model,
+                'exception' => $e::class,
+                'message'   => str_replace($apiKey, '[redacted]', $e->getMessage()),
+            ]);
 
-        return null;
+            return null;
+        }
     }
 
+    private function logGeminiError(Response $response): void
+    {
+        $context = [
+            'status'        => $response->status(),
+            'error_status'  => $response->json('error.status'),
+            'error_message' => substr((string) $response->json('error.message'), 0, 300),
+        ];
+
+        if ($response->status() === 429) {
+            Log::warning('Gemini API rate limit reached.', $context);
+
+            return;
+        }
+
+        Log::error('Gemini API error.', $context);
+    }
 
     // ──────────────────────────────────────────────
     // Response Builders

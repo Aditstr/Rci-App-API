@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Menu, X, LogOut, LayoutDashboard, MessageSquare, Sparkles } from 'lucide-vue-next';
+import { Menu, X, LogOut, LayoutDashboard, MessageSquare, Sparkles, Crown } from 'lucide-vue-next';
 
 const router = useRouter();
 const auth = useAuthStore();
@@ -43,6 +43,10 @@ const handleLogout = async () => {
                 <router-link to="/client/ai-chat" class="hover:text-[#fc5000] transition-colors flex items-center gap-1.5 font-semibold text-slate-800">
                     <Sparkles class="w-4 h-4 text-[#fc5000]" />
                     Konsultasi AI
+                </router-link>
+                <router-link v-if="auth.isAuthenticated" to="/client/membership" class="hover:text-[#fc5000] transition-colors flex items-center gap-1.5">
+                    <Crown class="w-4 h-4 text-[#fc5000]" />
+                    Membership
                 </router-link>
                 <a href="/#layanan" class="hover:text-slate-900 transition-colors">
                     Layanan
@@ -120,6 +124,15 @@ const handleLogout = async () => {
             >
                 <Sparkles class="w-4 h-4 text-[#fc5000]" />
                 Konsultasi AI
+            </router-link>
+            <router-link
+                v-if="auth.isAuthenticated"
+                to="/client/membership"
+                class="py-2 text-sm font-medium flex items-center gap-2 text-slate-700 hover:text-[#fc5000]"
+                @click="mobileOpen = false"
+            >
+                <Crown class="w-4 h-4 text-[#fc5000]" />
+                Membership
             </router-link>
             <a
                 href="/#layanan"

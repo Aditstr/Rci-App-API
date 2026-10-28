@@ -16,7 +16,8 @@ import {
     User, 
     AlertTriangle, 
     Loader2, 
-    RefreshCw 
+    RefreshCw,
+    ArrowRight
 } from 'lucide-vue-next';
 
 const route = useRoute();
@@ -114,10 +115,20 @@ const handleSend = async (customText = null) => {
         });
     } catch (err) {
         const status = err.response?.status;
+        const tier = err.response?.data?.tier;
+        let action = null;
 
         // 403 means no membership, not an exhausted quota; do not show a quota label for it.
         if (status === 429 || status === 503) {
             usage.value = err.response?.data?.usage ?? usage.value;
+        }
+
+        if (status === 403) {
+            action = tier === 'guest'
+                ? { to: '/login', label: 'Masuk ke akun' }
+                : { to: '/client/membership', label: 'Lihat halaman membership' };
+        } else if (status === 401) {
+            action = { to: '/login', label: 'Masuk kembali' };
         }
 
         messages.value.push({
@@ -125,6 +136,7 @@ const handleSend = async (customText = null) => {
             content: errorMessage(err),
             time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             isError: true,
+            action,
         });
     } finally {
         sending.value = false;
@@ -198,6 +210,14 @@ onMounted(() => {
                             ]"
                         >
                             {{ msg.content }}
+                            <router-link
+                                v-if="msg.action"
+                                :to="msg.action.to"
+                                class="inline-flex items-center gap-1.5 mt-2 py-1.5 text-xs font-semibold underline underline-offset-4 min-h-[44px]"
+                            >
+                                {{ msg.action.label }}
+                                <ArrowRight class="w-3.5 h-3.5" />
+                            </router-link>
                             <div
                                 :class="[
                                     'text-[10px] mt-2 text-right',

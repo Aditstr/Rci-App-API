@@ -47,6 +47,12 @@ const routes = [
         meta: { requiresAuth: true },
     },
     {
+        path: '/client/membership',
+        name: 'client.membership',
+        component: () => import('@/views/client/MembershipView.vue'),
+        meta: { requiresAuth: true },
+    },
+    {
         path: '/client/ai-chat',
         name: 'client.ai-chat',
         component: AiChatView,

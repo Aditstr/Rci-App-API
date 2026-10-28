@@ -20,6 +20,7 @@ Route::get('/login', fn() => view('app'));
 Route::get('/register', fn() => view('app'));
 Route::get('/client', fn() => view('app'));
 Route::get('/client/ai-chat', fn() => view('app'));
+Route::get('/client/membership', fn() => view('app'));
 Route::get('/client/cases/create', fn() => view('app'));
 Route::get('/client/cases/{id}/chat', fn() => view('app'));
 Route::get('/client/cases/{id}', fn() => view('app'));

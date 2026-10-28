@@ -61,7 +61,6 @@ class SubscriptionEntitlementTest extends TestCase
         config([
             'services.gemini.api_key' => 'test-key',
             'services.gemini.model' => 'test-model',
-            'services.openrouter.api_key' => null,
         ]);
 
         $service->chat('Apa itu wanprestasi?', $user);

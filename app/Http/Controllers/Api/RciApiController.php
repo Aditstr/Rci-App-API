@@ -10,6 +10,7 @@ use App\Models\LegalCase;
 use App\Services\AiQuotaService;
 use App\Services\AiService;
 use App\Services\EscrowService;
+use App\Services\MembershipConfig;
 use App\Services\SubscriptionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -200,6 +201,40 @@ class RciApiController extends Controller
     }
 
     // ─── Upgrade to Pro ─────────────────────────────────────────
+
+    /**
+     * Read-only membership details for the authenticated user.
+     *
+     * GET /api/rci/membership
+     */
+    public function membership(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $config = MembershipConfig::all();
+        $status = $this->subscriptionService->getStatus($user);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Informasi membership berhasil diambil.',
+            'data'    => [
+                'config' => [
+                    'price'          => $config['price'],
+                    'duration_days'  => $config['duration_days'],
+                    'ai_daily_limit' => $config['ai_daily_limit'],
+                    'enabled'        => $config['enabled'],
+                ],
+                'status' => [
+                    'is_pro'    => $status['is_pro'],
+                    'plan'      => $status['plan'],
+                    'starts_at' => $status['starts_at'] ?? null,
+                    'ends_at'   => $status['ends_at'] ?? null,
+                    'days_left' => $status['days_left'] ?? null,
+                ],
+                'usage'        => $this->aiQuota->snapshot($user),
+                'can_purchase' => $user->role === 'client',
+            ],
+        ]);
+    }
 
     /**
      * Buy or extend the authenticated user's membership.

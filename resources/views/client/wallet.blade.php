@@ -26,6 +26,7 @@
 <div style="margin-bottom:32px;">
     <h1 class="font-display text-heading-lg">DOMPET <span style="color:var(--color-ember);">VIRTUAL</span></h1>
     <p style="color:rgba(7,6,7,0.5); font-size:14px; margin-top:4px;">Kelola saldo dan transaksi Anda. Top-up via transfer manual.</p>
+    <a href="/client/membership" style="display:inline-flex; align-items:center; min-height:44px; margin-top:8px; font-size:14px; font-weight:600; color:var(--color-obsidian); text-decoration:underline; text-underline-offset:4px;">&larr; Kembali ke Membership</a>
 </div>
 
 <!-- Balance Card -->
@@ -52,12 +53,12 @@
         </div>
         <div class="grid-3-cols" style="margin-bottom:14px;">
             @foreach([50000, 100000, 250000, 500000, 1000000, 2000000] as $amt)
-            <button onclick="setTopupAmt({{ $amt }})" class="topup-preset" style="padding:12px; border-radius:var(--radius-medium); border:1.5px solid var(--color-pumice); background:var(--color-pumice); cursor:pointer; font-family:var(--font-dm-sans); font-weight:500; font-size:13px; transition:all 0.15s;">
+            <button onclick="setTopupAmt({{ $amt }}, event)" class="topup-preset" style="padding:12px; border-radius:var(--radius-medium); border:1.5px solid var(--color-pumice); background:var(--color-pumice); cursor:pointer; font-family:var(--font-dm-sans); font-weight:500; font-size:13px; transition:all 0.15s;">
                 Rp {{ number_format($amt, 0, ',', '.') }}
             </button>
             @endforeach
         </div>
-        <input type="number" id="topup-amount" class="input-field" placeholder="Jumlah transfer (Rp) min 10.000" style="margin-bottom:10px;">
+        <input type="number" id="topup-amount" class="input-field" min="10000" max="100000000" placeholder="Jumlah transfer (Rp 10.000 - 100.000.000)" style="margin-bottom:10px;">
         <select id="topup-bank-name" class="input-field" style="margin-bottom:10px;">
             <option value="">-- Bank Pengirim --</option>
             <option value="BCA">BCA</option>
@@ -181,14 +182,14 @@ function loadWallet() {
 
 function showTopup() { document.getElementById('topup-modal').style.display = 'flex'; document.getElementById('topup-error').style.display='none'; }
 
-function setTopupAmt(amt) {
+function setTopupAmt(amt, ev) {
     document.getElementById('topup-amount').value = amt;
     document.querySelectorAll('.topup-preset').forEach(b => {
         b.style.borderColor = 'var(--color-pumice)';
         b.style.background = 'var(--color-pumice)';
     });
-    event.currentTarget.style.borderColor = 'var(--color-ember)';
-    event.currentTarget.style.background = 'rgba(252,80,0,0.08)';
+    ev.currentTarget.style.borderColor = 'var(--color-ember)';
+    ev.currentTarget.style.background = 'rgba(252,80,0,0.08)';
 }
 
 async function doTopup() {
@@ -199,10 +200,13 @@ async function doTopup() {
     const errEl = document.getElementById('topup-error');
     errEl.style.display='none';
     if (!amt || amt < 10000) { errEl.textContent='Minimum top up Rp 10.000'; errEl.style.display='block'; return; }
+    if (Number(amt) > 100000000) { errEl.textContent='Maksimum top up Rp 100.000.000'; errEl.style.display='block'; return; }
     if (!bank) { errEl.textContent='Pilih bank pengirim'; errEl.style.display='block'; return; }
     if (!sender) { errEl.textContent='Isi nama pengirim'; errEl.style.display='block'; return; }
     if (!proof) { errEl.textContent='Upload bukti transfer (jpg/png/pdf)'; errEl.style.display='block'; return; }
     const btn = document.getElementById('topup-submit-btn');
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 20000);
     btn.disabled=true; btn.textContent='Mengirim...';
     try {
         const fd = new FormData();
@@ -213,7 +217,8 @@ async function doTopup() {
         const res = await fetch('/api/v1/rci/topup/manual', {
             method:'POST',
             headers: {'Authorization':'Bearer '+token,'Accept':'application/json'},
-            body: fd
+            body: fd,
+            signal: controller.signal
         });
         const data = await res.json();
         if (!res.ok) {
@@ -225,8 +230,11 @@ async function doTopup() {
         document.getElementById('topup-amount').value='';
         document.getElementById('topup-proof').value='';
         loadPendingManual();
-    } catch(e) { errEl.textContent=e.message; errEl.style.display='block'; }
-    finally { btn.disabled=false; btn.textContent='Kirim Bukti'; }
+    } catch(e) {
+        errEl.textContent = e.name === 'AbortError' ? 'Koneksi timeout. Coba lagi.' : e.message;
+        errEl.style.display='block';
+    }
+    finally { clearTimeout(timer); btn.disabled=false; btn.textContent='Kirim Bukti'; }
 }
 
 function showUpgrade() {
@@ -256,10 +264,6 @@ window.showTopup   = showTopup;
 window.showUpgrade = showUpgrade;
 window.setTopupAmt = setTopupAmt;
 window.doTopup     = doTopup;
-})();
-</script>
-@endpush
-pup     = doTopup;
 })();
 </script>
 @endpush
