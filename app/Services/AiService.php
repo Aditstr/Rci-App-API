@@ -196,7 +196,7 @@ PROMPT;
      *
      * @param  string     $message  The user's question
      * @param  User|null  $user     The authenticated user (null = guest)
-     * @return array{answer: string, topic: string, confidence: float, system_prompt: string, disclaimer: string}
+     * @return array{answer: string, topic: string, confidence: float, system_prompt: string, disclaimer: string, fallback: bool}
      */
     public function chat(string $message, ?User $user = null): array
     {
@@ -247,13 +247,17 @@ PROMPT;
                 'disclaimer' => $isPro
                     ? 'Analisis berdasarkan hukum positif Indonesia. Konsultasikan dengan Advokat.'
                     : 'Jawaban bersifat umum. Hubungi Paralegal kami untuk langkah teknis.',
+                'fallback'   => false,
             ];
         }
 
-        // Static fallback jika semua API gagal
-        return $isPro
+        // Static fallback jika semua API gagal; controllers refund the quota for it.
+        $fallback = $isPro
             ? $this->buildProResponse($message, $topic)
             : $this->buildFreeResponse($message, $topic);
+        $fallback['fallback'] = true;
+
+        return $fallback;
     }
 
     // ──────────────────────────────────────────────

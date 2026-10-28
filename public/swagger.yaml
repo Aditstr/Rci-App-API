@@ -19,15 +19,15 @@ security:
 paths:
   /chat/send:
     post:
-      summary: AI Legal Chat (Freemium)
+      summary: AI Legal Chat (Member)
       description: |
-        Send a legal question to the AI assistant. 
-        - **Guest/Free users**: Limited to 3 questions/day, receives general analysis.
-        - **Pro users (corporate/lawyer)**: Unlimited access, receives detailed analysis with specific UU/Pasal references.
-        Uses OpenRouter API with fallback to built-in responses.
+        Send a legal question to the AI assistant.
+        - Only clients with an active membership subscription are allowed. Guests and users without an active subscription receive 403.
+        - Each member gets at most 3 questions per day, configured by MembershipConfig::aiDailyLimit().
+        - The quota is shared with POST /rci/chat and resets at 00:00 Asia/Jakarta.
+        - The quota is consumed before the AI provider is called. If all providers fail and only the static fallback is returned, the quota is refunded.
       tags:
         - AI Chat
-      security: []
       requestBody:
         required: true
         content:
@@ -39,14 +39,9 @@ paths:
               properties:
                 message:
                   type: string
-                  description: Legal question (max 2000 characters)
+                  maxLength: 2000
+                  description: Legal question
                   example: "Saya ingin menanyakan tentang hak pesangon setelah di-PHK"
-                session_id:
-                  type: string
-                  description: Session ID for guest users (auto-generated if not provided)
-                user_id:
-                  type: integer
-                  description: User ID for testing (optional, overridden by Sanctum auth)
       responses:
         '200':
           description: AI Response
@@ -60,7 +55,7 @@ paths:
                     example: success
                   tier:
                     type: string
-                    enum: [guest, free, pro]
+                    enum: [pro]
                   data:
                     type: object
                     properties:
@@ -68,7 +63,6 @@ paths:
                         type: string
                       topic:
                         type: string
-                        enum: [pidana, perdata, keluarga, bisnis, properti, tenaga_kerja, umum]
                       confidence:
                         type: number
                       disclaimer:
@@ -78,16 +72,36 @@ paths:
                     properties:
                       limit:
                         type: integer
+                        example: 3
                       used:
                         type: integer
+                        example: 1
                       remaining:
                         type: integer
+                        example: 2
+                  escalation:
+                    type: object
+                    properties:
+                      can_escalate:
+                        type: boolean
+                      message:
+                        type: string
+                      escalate_url:
+                        type: string
+        '403':
+          description: Guest or user without an active membership subscription
         '429':
-          description: Daily limit reached (Free/Guest users)
+          description: Daily AI quota exhausted; resets at 00:00 Asia/Jakarta
+        '503':
+          description: AI provider unavailable or quota store failure; quota is refunded when possible
   /rci/chat:
     post:
-      summary: AI Chat for Authenticated Users
-      description: AI legal chat for verified, authenticated users via Sanctum token.
+      summary: AI Chat for Authenticated Members
+      description: |
+        Same quota rules as POST /chat/send, sharing one counter per user.
+        - Requires a Sanctum token and an active membership subscription. The lawyer, paralegal, and corporate roles do not grant access by themselves.
+        - 3 questions per day, reset at 00:00 Asia/Jakarta.
+        - The quota is consumed before the AI provider is called and refunded when only the static fallback is returned.
       tags:
         - AI Chat
       requestBody:
@@ -101,12 +115,57 @@ paths:
               properties:
                 message:
                   type: string
+                  maxLength: 2000
                   example: "Bagaimana cara mengajukan gugatan perdata?"
       responses:
         '200':
           description: AI Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                  tier:
+                    type: string
+                    enum: [pro]
+                  data:
+                    type: object
+                    properties:
+                      answer:
+                        type: string
+                      topic:
+                        type: string
+                      confidence:
+                        type: number
+                      disclaimer:
+                        type: string
+                  usage:
+                    type: object
+                    properties:
+                      limit:
+                        type: integer
+                        example: 3
+                      used:
+                        type: integer
+                        example: 1
+                      remaining:
+                        type: integer
+                        example: 2
         '401':
           description: Unauthenticated
+        '403':
+          description: No active membership subscription
+        '422':
+          description: Invalid message
+        '429':
+          description: Daily AI quota exhausted; resets at 00:00 Asia/Jakarta
+        '503':
+          description: AI provider unavailable or quota store failure; quota is refunded when possible
   /auth/register:
     post:
       summary: Register a new user
